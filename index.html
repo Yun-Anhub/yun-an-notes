@@ -1,0 +1,4144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f2ea">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="application-name" content="云岸笔记">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="云岸笔记">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%2324634f'/%3E%3Cpath d='M15 39c6-7 12-7 18 0s12 7 18 0' fill='none' stroke='%23fffdf8' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M19 26h26' stroke='%23fffdf8' stroke-width='5' stroke-linecap='round' opacity='.55'/%3E%3C/svg%3E">
+  <title>云岸笔记</title>
+  <style>
+    :root {
+      --bg: #f5f2ea;
+      --surface: #fffdf8;
+      --text: #25231f;
+      --muted: #6f685e;
+      --line: #e7e0d4;
+      --green: #24634f;
+      --green-dark: #194c3c;
+      --green-soft: #e8f1ec;
+      --amber: #8f5c10;
+      --amber-bg: #fff7e6;
+      --amber-line: #d9aa55;
+      --danger: #9b3425;
+      --shadow: 0 8px 24px rgba(54, 45, 31, 0.07);
+      --radius: 18px;
+      --ease-out: cubic-bezier(0.22, 0.8, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
+    body.dialog-open {
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    :focus-visible {
+      outline: 3px solid rgba(36, 99, 79, 0.3);
+      outline-offset: 2px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 560px;
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: calc(14px + env(safe-area-inset-top)) 18px 10px;
+      background: rgba(245, 242, 234, 0.93);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar-title {
+      min-width: 0;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: 0.02em;
+    }
+
+    .topbar p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .back-button {
+      position: relative;
+      flex-shrink: 0;
+      min-height: 42px;
+      padding: 8px 13px 8px 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(54, 45, 31, 0.04);
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .back-button:active {
+      background: #f7f2e8;
+      transform: scale(0.96);
+    }
+
+    .notice {
+      margin: 6px 16px 0;
+      padding: 12px 14px;
+      border: 1px solid #e8c9a0;
+      border-radius: 14px;
+      background: #fff3df;
+      color: #684309;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .notice strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 14px;
+    }
+
+    main {
+      padding: 6px 16px 18px;
+    }
+
+    .summary-card {
+      position: relative;
+      overflow: hidden;
+      padding: 22px 22px 20px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #266451 0%, #174636 100%);
+      color: #fff;
+      box-shadow: 0 14px 34px rgba(33, 85, 67, 0.18);
+    }
+
+    .summary-card::after {
+      position: absolute;
+      top: -56px;
+      right: -36px;
+      width: 150px;
+      height: 150px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .summary-label {
+      position: relative;
+      z-index: 1;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      opacity: 0.78;
+    }
+
+    .summary-value {
+      position: relative;
+      z-index: 1;
+      margin: 5px 0 2px;
+      font-size: clamp(32px, 9vw, 42px);
+      font-weight: 720;
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      overflow-wrap: anywhere;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-note {
+      position: relative;
+      z-index: 1;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 24px 4px 10px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0.03em;
+    }
+
+    .section-heading span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .customer-heading {
+      align-items: center;
+    }
+
+    .sort-toggle {
+      display: inline-flex;
+      flex-shrink: 0;
+      align-items: center;
+      gap: 7px;
+      min-height: 44px;
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--green);
+      box-shadow: 0 2px 8px rgba(54, 45, 31, 0.04);
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .sort-toggle:active {
+      background: var(--green-soft);
+      transform: scale(0.96);
+    }
+
+    .sort-dot {
+      width: 7px;
+      height: 7px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(36, 99, 79, 0.08);
+      transition: background-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .sort-toggle[data-mode="age"] .sort-dot {
+      background: var(--amber-line);
+      box-shadow: 0 0 0 3px rgba(217, 170, 85, 0.16);
+    }
+
+    .sort-label {
+      animation: sort-label-in 0.2s var(--ease-out);
+    }
+
+    .sort-swap {
+      display: inline-flex;
+      width: 14px;
+      height: 14px;
+      color: #8f877b;
+      transition: color 0.18s ease, transform 0.22s var(--ease-out);
+    }
+
+    .sort-swap svg {
+      display: block;
+      width: 14px;
+      height: 14px;
+    }
+
+    .sort-toggle[data-mode="age"] .sort-swap {
+      color: var(--amber);
+      transform: rotate(90deg);
+    }
+
+    .customer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .customer-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      min-height: 76px;
+      gap: 12px;
+      padding: 14px 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      text-align: left;
+      box-shadow: var(--shadow);
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.2s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .customer-card:active {
+      background: #faf6ee;
+      transform: scale(0.986);
+    }
+
+    .customer-card.has-overdue {
+      border-left: 4px solid var(--amber-line);
+      padding-left: 13px;
+    }
+
+    .customer-main {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .customer-name {
+      overflow: hidden;
+      font-size: 17px;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .customer-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px 8px;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .meta-main {
+      white-space: nowrap;
+    }
+
+    .overdue-inline {
+      color: var(--amber);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .customer-side {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .customer-amount {
+      color: var(--green-dark);
+      font-size: 18px;
+      font-weight: 700;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .customer-arrow {
+      color: #b7afa2;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .empty-state {
+      padding: 42px 24px;
+      border: 1px dashed #d9d0c1;
+      border-radius: 20px;
+      background: var(--surface);
+      text-align: center;
+    }
+
+    .empty-mark {
+      display: grid;
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 14px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 23px;
+      font-weight: 700;
+    }
+
+    .empty-state h3 {
+      margin: 0 0 5px;
+      font-size: 17px;
+    }
+
+    .empty-state p {
+      max-width: 270px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .ledger-summary {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .ledger-kicker {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+    }
+
+    .ledger-name {
+      margin: 2px 0 18px;
+      font-size: 24px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .ledger-label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .ledger-balance {
+      margin-top: 1px;
+      color: var(--green-dark);
+      font-size: 34px;
+      font-weight: 720;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      overflow-wrap: anywhere;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ledger-meta {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .writeoff-note {
+      display: inline-block;
+      margin-top: 9px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #faf1df;
+      color: var(--amber);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .record-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sale-card {
+      position: relative;
+      padding: 14px 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.2s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .sale-card:active {
+      transform: scale(0.991);
+    }
+
+    .sale-card.overdue {
+      border-color: #efdcb8;
+      border-left: 4px solid var(--amber-line);
+      padding-left: 13px;
+      background: var(--amber-bg);
+    }
+
+    .sale-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .sale-date {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status {
+      flex-shrink: 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f1ede5;
+      color: #6e675c;
+      font-size: 11px;
+    }
+
+    .status.open {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .sale-main {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .sale-item {
+      min-width: 0;
+      font-size: 17px;
+      font-weight: 620;
+      overflow-wrap: anywhere;
+    }
+
+    .sale-unpaid {
+      flex-shrink: 0;
+      color: var(--text);
+      font-size: 17px;
+      font-weight: 700;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sale-unpaid.closed {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .sale-details {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .sale-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 9px;
+    }
+
+    .sale-age {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .sale-card.overdue .sale-age {
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    .sale-open-hint {
+      flex-shrink: 0;
+      margin-left: auto;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .overdue-label {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f5e1b8;
+      color: #7d5010;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .settled-group {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .settled-group summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 0 4px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .settled-group summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .settled-count {
+      color: #9b9489;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .settled-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .settled-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      min-height: 52px;
+      gap: 12px;
+      padding: 11px 14px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 253, 248, 0.7);
+      color: var(--text);
+      font-size: 15px;
+      text-align: left;
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.2s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .settled-card:active {
+      background: #f7f2e8;
+      transform: scale(0.986);
+    }
+
+    .settled-card .settled-label {
+      flex-shrink: 0;
+      color: var(--green);
+      font-size: 12px;
+    }
+
+    .payment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .payment-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 15px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .payment-date {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .payment-cash {
+      color: var(--green-dark);
+      font-size: 17px;
+      font-weight: 700;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .payment-values {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+    }
+
+    .writeoff-pill {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f5e8cd;
+      color: var(--amber);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .data-tools {
+      margin: 26px 4px 0;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .data-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .text-button {
+      min-height: 44px;
+      padding: 10px 8px;
+      border: 0;
+      background: none;
+      color: var(--green);
+      font-size: 13px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.16s ease, opacity 0.16s ease;
+    }
+
+    .text-button:active {
+      color: var(--green-dark);
+      opacity: 0.7;
+    }
+
+    .data-tools p {
+      margin: 2px 0 0;
+      line-height: 1.55;
+    }
+
+    .dot {
+      color: #b8b0a4;
+    }
+
+    .bottom-bar {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 20;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: linear-gradient(
+        to top,
+        rgba(245, 242, 234, 0.99) 58%,
+        rgba(245, 242, 234, 0)
+      );
+      pointer-events: none;
+    }
+
+    .bottom-actions {
+      display: flex;
+      max-width: 528px;
+      margin: 0 auto;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .primary-button {
+      position: relative;
+      display: block;
+      width: 100%;
+      max-width: 528px;
+      min-height: 54px;
+      margin: 0 auto;
+      padding: 12px 18px;
+      overflow: hidden;
+      border: 0;
+      border-radius: 16px;
+      background: var(--green);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 24px rgba(31, 86, 66, 0.24);
+      pointer-events: auto;
+      transition:
+        background-color 0.16s ease,
+        box-shadow 0.2s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .bottom-actions .primary-button {
+      flex: 1;
+      width: auto;
+      max-width: none;
+      margin: 0;
+    }
+
+    .pay-button {
+      position: relative;
+      flex: 0 0 auto;
+      min-width: 112px;
+      min-height: 54px;
+      padding: 12px 16px;
+      overflow: hidden;
+      border: 2px solid var(--green);
+      border-radius: 16px;
+      background: var(--surface);
+      color: var(--green);
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      pointer-events: auto;
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        color 0.16s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .pay-button:active {
+      background: var(--green-soft);
+      transform: translateY(1px) scale(0.975);
+    }
+
+    .pay-button:disabled {
+      border-color: #b9b4aa;
+      color: #8c877e;
+      background: #efebe2;
+      cursor: not-allowed;
+    }
+
+    .primary-button:active {
+      background: var(--green-dark);
+      transform: translateY(1px) scale(0.985);
+    }
+
+    .primary-button:disabled {
+      background: #939b95;
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 0.85;
+    }
+
+    .primary-button:disabled:active {
+      background: #939b95;
+      transform: none;
+    }
+
+    dialog {
+      width: min(540px, calc(100% - 24px));
+      max-height: 92dvh;
+      padding: 0;
+      border: 0;
+      border-radius: 24px;
+      background: transparent;
+      box-shadow: 0 24px 70px rgba(30, 25, 18, 0.28);
+    }
+
+    dialog::backdrop {
+      background: rgba(35, 31, 24, 0.48);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+    }
+
+    .sheet {
+      display: flex;
+      max-height: 92dvh;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 24px;
+      background: var(--bg);
+    }
+
+    .sheet-grip {
+      width: 38px;
+      height: 4px;
+      margin: 8px auto 0;
+      border-radius: 99px;
+      background: #d7cfc2;
+    }
+
+    .dialog-head {
+      padding: 12px 18px 12px;
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .dialog-head p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .form-fields {
+      overflow-y: auto;
+      padding: 0 18px 4px;
+      overscroll-behavior: contain;
+    }
+
+    .field {
+      display: block;
+      margin-bottom: 14px;
+    }
+
+    .field > span {
+      display: block;
+      margin-bottom: 6px;
+      color: #5e584e;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 50px;
+      padding: 12px 13px;
+      border: 1px solid #dcd3c5;
+      border-radius: 12px;
+      background: var(--surface);
+      font-size: 17px;
+      outline: none;
+    }
+
+    .field input::placeholder {
+      color: #b1a99c;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(36, 99, 79, 0.12);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .hint {
+      margin: -5px 0 13px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .payment-summary {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 0 18px 16px;
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: var(--green-soft);
+    }
+
+    .payment-summary-label {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--green);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+    }
+
+    .payment-summary-name {
+      color: var(--green-dark);
+      font-size: 17px;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    .payment-summary-debt {
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    .payment-summary-amount {
+      color: var(--green-dark);
+      font-size: 19px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .payment-preview {
+      margin: -3px 0 14px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: #f2ede3;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .payment-preview.over {
+      background: #fdebe7;
+      color: var(--danger);
+    }
+
+    .record-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dialog-close {
+      position: relative;
+      display: grid;
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      overflow: hidden;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 22px;
+      line-height: 1;
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .dialog-close:active {
+      background: #f3eee5;
+      transform: scale(0.92);
+    }
+
+    .record-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 0 18px 6px;
+      overscroll-behavior: contain;
+    }
+
+    .record-hero {
+      padding: 15px 16px;
+      border-radius: 16px;
+      background: var(--green-soft);
+    }
+
+    .record-hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .record-item {
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    .record-amount {
+      margin-top: 7px;
+      color: var(--green-dark);
+      font-size: 30px;
+      font-weight: 720;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      overflow-wrap: anywhere;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .record-money-line {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .record-info {
+      margin-top: 14px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .detail-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    .detail-row:last-child {
+      border-bottom: 0;
+    }
+
+    .detail-key {
+      flex-shrink: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .detail-value {
+      color: var(--text);
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .record-age {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .record-age.is-overdue {
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    .record-repayments {
+      margin-top: 16px;
+    }
+
+    .record-section-title {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .repayment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .repayment-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      font-size: 13px;
+    }
+
+    .repayment-date {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .repayment-amount {
+      color: var(--green-dark);
+      font-weight: 600;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .repayment-amount .writeoff-pill {
+      margin-left: 4px;
+    }
+
+    .record-empty {
+      padding: 14px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .record-edit {
+      padding-top: 2px;
+    }
+
+    .dialog-actions.record-actions {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .danger-button {
+      position: relative;
+      min-height: 50px;
+      padding: 10px 14px;
+      overflow: hidden;
+      border: 1px solid #e3c4bc;
+      border-radius: 14px;
+      background: #fff7f5;
+      color: var(--danger);
+      font-size: 16px;
+      font-weight: 600;
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .danger-button:active {
+      background: #fbe9e4;
+      transform: scale(0.985);
+    }
+
+    .danger-button.solid {
+      border-color: var(--danger);
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .danger-button.solid:active {
+      background: #7f281d;
+      border-color: #7f281d;
+    }
+
+    .record-confirm {
+      padding: 24px 16px 20px;
+      border: 1px solid #ecd3cd;
+      border-radius: 18px;
+      background: #fff8f6;
+      text-align: center;
+    }
+
+    .confirm-mark {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      margin: 0 auto 12px;
+      place-items: center;
+      border-radius: 50%;
+      background: #f7e4df;
+      color: var(--danger);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .record-confirm h3 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.4;
+    }
+
+    .confirm-note {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .confirm-summary {
+      margin-top: 17px;
+      padding: 3px 12px;
+      border-radius: 12px;
+      background: var(--surface);
+      text-align: left;
+    }
+
+    .confirm-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .confirm-row:last-child {
+      border-bottom: 0;
+    }
+
+    .confirm-row span {
+      color: var(--muted);
+    }
+
+    .confirm-row strong {
+      font-weight: 600;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .confirm-record {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .record-mode-enter {
+      animation: record-mode-in 0.22s var(--ease-out);
+    }
+
+    .item-updated {
+      animation: item-updated 0.75s var(--ease-out);
+    }
+
+    .item-leaving {
+      pointer-events: none;
+      animation: item-leave 0.26s ease-in forwards;
+    }
+
+    @keyframes record-mode-in {
+      from {
+        opacity: 0.4;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes item-updated {
+      0% {
+        box-shadow: 0 0 0 0 rgba(36, 99, 79, 0.24);
+      }
+      55% {
+        box-shadow: 0 0 0 5px rgba(36, 99, 79, 0.11);
+      }
+      100% {
+        box-shadow: 0 0 0 12px rgba(36, 99, 79, 0);
+      }
+    }
+
+    @keyframes item-leave {
+      to {
+        opacity: 0;
+        transform: translateX(16px) scale(0.985);
+      }
+    }
+
+    .form-error {
+      flex-shrink: 0;
+      margin: 0 18px 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fdebe7;
+      color: var(--danger);
+      font-size: 13px;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      gap: 10px;
+      padding: 13px 18px calc(13px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--line);
+      background: var(--bg);
+    }
+
+    .secondary-button {
+      position: relative;
+      min-height: 50px;
+      padding: 10px 14px;
+      overflow: hidden;
+      border: 1px solid #d9d0c2;
+      border-radius: 14px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 16px;
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .secondary-button:active {
+      background: #f3eee5;
+      transform: scale(0.985);
+    }
+
+    .dialog-actions .primary-button {
+      min-height: 50px;
+      border-radius: 14px;
+      font-size: 16px;
+      box-shadow: none;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(86px + env(safe-area-inset-bottom));
+      left: 50%;
+      z-index: 100;
+      max-width: calc(100% - 32px);
+      padding: 11px 16px;
+      border-radius: 999px;
+      background: #223f34;
+      color: #fff;
+      box-shadow: 0 8px 26px rgba(34, 63, 52, 0.25);
+      font-size: 14px;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 6px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .toast.error {
+      background: #8e3023;
+    }
+
+    main.view-enter {
+      animation: view-enter 0.22s var(--ease-out);
+    }
+
+    dialog[open] .sheet {
+      animation: sheet-in 0.26s var(--ease-out);
+    }
+
+    dialog[open]::backdrop {
+      animation: backdrop-in 0.2s ease-out;
+    }
+
+    .tap-ripple {
+      position: absolute;
+      z-index: 0;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(0);
+      animation: tap-ripple 0.52s var(--ease-out) forwards;
+    }
+
+    .item-enter {
+      animation: item-appear 0.42s var(--ease-out) backwards;
+    }
+
+    @keyframes view-enter {
+      from {
+        opacity: 0.35;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes sheet-in {
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes backdrop-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes tap-ripple {
+      0% {
+        opacity: 0.16;
+        transform: translate(-50%, -50%) scale(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes sort-label-in {
+      from {
+        opacity: 0.35;
+        transform: translateY(2px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes item-appear {
+      from {
+        opacity: 0;
+        transform: translateY(7px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (hover: hover) {
+      .primary-button:hover:not(:disabled) {
+        background: #2b705a;
+        box-shadow: 0 12px 28px rgba(31, 86, 66, 0.28);
+      }
+
+      .pay-button:hover:not(:disabled) {
+        background: var(--green-soft);
+      }
+
+      .secondary-button:hover {
+        border-color: #c9bfaf;
+        background: #f8f3ea;
+      }
+
+      .back-button:hover {
+        border-color: #d8cfc2;
+        background: #fffdf9;
+      }
+
+      .sort-toggle:hover {
+        border-color: #d1c7b7;
+        background: #fffdf9;
+      }
+
+      .customer-card:hover,
+      .settled-card:hover {
+        border-color: #d8ccba;
+        box-shadow: 0 10px 26px rgba(54, 45, 31, 0.1);
+      }
+
+      .sale-card:hover {
+        box-shadow: 0 8px 22px rgba(54, 45, 31, 0.09);
+      }
+
+      .dialog-close:hover {
+        border-color: #d8cfc2;
+        background: #f7f2e8;
+      }
+
+      .danger-button:hover {
+        border-color: #d8b0a7;
+        background: #fbe9e4;
+      }
+
+      .danger-button.solid:hover {
+        border-color: #8e3023;
+        background: #8e3023;
+      }
+
+      .text-button:hover {
+        color: var(--green-dark);
+      }
+    }
+
+    @media (max-width: 600px) {
+      dialog {
+        position: fixed;
+        inset: auto 0 0 0;
+        width: 100%;
+        max-width: none;
+        max-height: 92dvh;
+        margin: 0;
+        border-radius: 22px 22px 0 0;
+      }
+
+      .sheet {
+        max-height: 92dvh;
+        border-radius: 22px 22px 0 0;
+      }
+    }
+
+    @media (max-width: 360px) {
+      main {
+        padding-right: 12px;
+        padding-left: 12px;
+      }
+
+      .field-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .customer-amount {
+        font-size: 16px;
+      }
+
+      .pay-button {
+        min-width: 96px;
+        padding-right: 12px;
+        padding-left: 12px;
+        font-size: 15px;
+      }
+
+      .bottom-actions .primary-button {
+        padding-right: 12px;
+        padding-left: 12px;
+        font-size: 15px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+
+      main.view-enter,
+      dialog[open] .sheet,
+      dialog[open]::backdrop,
+      .sort-label,
+      .item-enter,
+      .record-mode-enter,
+      .item-updated,
+      .item-leaving {
+        animation: none !important;
+      }
+
+      .tap-ripple {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="back-button" id="backButton" type="button" aria-label="返回客户列表" hidden>‹ 返回</button>
+      <div class="topbar-title">
+        <h1 id="pageTitle">云岸笔记</h1>
+        <p id="pageSubtitle">欠款与账龄，一眼看清</p>
+      </div>
+    </header>
+
+    <div class="notice" id="storageNotice" role="alert" hidden></div>
+
+    <main id="main"></main>
+
+    <footer class="data-tools" id="dataTools">
+      <div class="data-buttons">
+        <button class="text-button" id="exportButton" type="button">导出备份</button>
+        <span class="dot" aria-hidden="true">·</span>
+        <button class="text-button" id="importButton" type="button">导入恢复</button>
+      </div>
+      <p>数据只存在这台设备的浏览器里，请定期导出备份。</p>
+      <input id="importInput" type="file" accept=".json,application/json" hidden>
+    </footer>
+
+    <div class="bottom-bar">
+      <div class="bottom-actions">
+        <button class="pay-button" id="paymentButton" type="button" hidden>记收款</button>
+        <button class="primary-button" id="addButton" type="button">＋ 记一笔赊账</button>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="saleDialog" aria-labelledby="saleDialogTitle">
+    <form class="sheet" id="saleForm" novalidate>
+      <div class="sheet-grip" aria-hidden="true"></div>
+      <div class="dialog-head">
+        <h2 id="saleDialogTitle">记一笔赊账</h2>
+        <p>已付不填就是 0，日期默认今天。</p>
+      </div>
+
+      <div class="form-fields">
+        <label class="field">
+          <span>客户</span>
+          <select id="customerSelect"></select>
+        </label>
+
+        <label class="field" id="newCustomerField" hidden>
+          <span>新客户名字</span>
+          <input id="newCustomerName" type="text" maxlength="20" placeholder="例如：王师傅" autocomplete="off">
+        </label>
+
+        <label class="field">
+          <span>配件 / 备注</span>
+          <input id="itemInput" type="text" maxlength="40" placeholder="例如：前刹车片" autocomplete="off">
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>金额（元）</span>
+            <input id="amountInput" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00">
+          </label>
+          <label class="field">
+            <span>已付（元）</span>
+            <input id="paidInput" type="number" inputmode="decimal" step="0.01" min="0" value="0">
+          </label>
+        </div>
+
+        <label class="field">
+          <span>日期</span>
+          <input id="saleDate" type="date">
+        </label>
+      </div>
+
+      <p class="form-error" id="formError" role="alert" hidden></p>
+
+      <div class="dialog-actions">
+        <button class="secondary-button" id="cancelButton" type="button">取消</button>
+        <button class="primary-button" id="saveButton" type="submit">保存这笔</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="paymentDialog" aria-labelledby="paymentDialogTitle">
+    <form class="sheet" id="paymentForm" novalidate>
+      <div class="sheet-grip" aria-hidden="true"></div>
+      <div class="dialog-head">
+        <h2 id="paymentDialogTitle">记一笔收款</h2>
+        <p>收款会自动先冲最早的欠款，抹零可以不填。</p>
+      </div>
+
+      <div class="payment-summary">
+        <div>
+          <span class="payment-summary-label">客户</span>
+          <div class="payment-summary-name" id="paymentCustomerName"></div>
+        </div>
+        <div class="payment-summary-debt">
+          <span class="payment-summary-label">当前欠款</span>
+          <div class="payment-summary-amount" id="paymentBalance">¥0.00</div>
+        </div>
+      </div>
+
+      <div class="form-fields">
+        <div class="field-row">
+          <label class="field">
+            <span>收款（元）</span>
+            <input id="paymentAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+          </label>
+          <label class="field">
+            <span>抹零（元）</span>
+            <input id="paymentWriteOff" type="number" inputmode="decimal" step="0.01" min="0" value="0">
+          </label>
+        </div>
+
+        <p class="hint">抹零就是少收的零头，不抹零就填 0。</p>
+
+        <label class="field">
+          <span>日期</span>
+          <input id="paymentDate" type="date">
+        </label>
+
+        <p class="payment-preview" id="paymentPreview">本次抵扣 ¥0.00，剩余欠款 ¥0.00</p>
+      </div>
+
+      <p class="form-error" id="paymentError" role="alert" hidden></p>
+
+      <div class="dialog-actions">
+        <button class="secondary-button" id="paymentCancelButton" type="button">取消</button>
+        <button class="primary-button" id="paymentSaveButton" type="submit">保存收款</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="recordDialog" aria-labelledby="recordDialogTitle">
+    <div class="sheet record-sheet">
+      <div class="sheet-grip" aria-hidden="true"></div>
+      <div class="dialog-head record-head">
+        <div>
+          <h2 id="recordDialogTitle">赊销详情</h2>
+          <p id="recordDialogSubtitle"></p>
+        </div>
+        <button class="dialog-close" id="recordCloseButton" type="button" aria-label="关闭详情">×</button>
+      </div>
+      <div class="record-body" id="recordBody"></div>
+      <p class="form-error" id="recordError" role="alert" hidden></p>
+      <div class="dialog-actions record-actions" id="recordActions"></div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    "use strict";
+
+    /*
+      数据结构（所有金额都以“分”为单位保存，避免小数计算误差）：
+      customers: [{ id, name, createdAt }]
+      sales: [{ id, customerId, date: "YYYY-MM-DD", item, amountCents, paidCents, createdAt }]
+      payments: [{ id, customerId, date: "YYYY-MM-DD", amountCents, writeOffCents, createdAt }]
+
+      收款不单独挂到某一笔赊账上，而是自动冲最早的欠款。
+      下一步再加：对账单、手机添加到主屏幕。
+    */
+
+    // ---------- 基础设置 ----------
+    const APP_NAME = "云岸笔记";
+    const LEGACY_APP_NAME = "赊账本";
+    const APP_VERSION = 2; // 第 2 版增加了收款和抹零
+    // 存储键名保持不变，这样已经记过的旧数据还能直接读出来。
+    const STORAGE_KEY = "shouzhang.data.v1";
+    const SORT_KEY = "shouzhang.sortMode";
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    const mainEl = document.getElementById("main");
+    const storageNotice = document.getElementById("storageNotice");
+    const backButton = document.getElementById("backButton");
+    const pageTitle = document.getElementById("pageTitle");
+    const pageSubtitle = document.getElementById("pageSubtitle");
+    const dataTools = document.getElementById("dataTools");
+    const addButton = document.getElementById("addButton");
+    const paymentButton = document.getElementById("paymentButton");
+    const exportButton = document.getElementById("exportButton");
+    const importButton = document.getElementById("importButton");
+    const importInput = document.getElementById("importInput");
+    const saleDialog = document.getElementById("saleDialog");
+    const saleForm = document.getElementById("saleForm");
+    const customerSelect = document.getElementById("customerSelect");
+    const newCustomerField = document.getElementById("newCustomerField");
+    const newCustomerName = document.getElementById("newCustomerName");
+    const itemInput = document.getElementById("itemInput");
+    const amountInput = document.getElementById("amountInput");
+    const paidInput = document.getElementById("paidInput");
+    const saleDate = document.getElementById("saleDate");
+    const formError = document.getElementById("formError");
+    const cancelButton = document.getElementById("cancelButton");
+    const saveButton = document.getElementById("saveButton");
+    const paymentDialog = document.getElementById("paymentDialog");
+    const paymentForm = document.getElementById("paymentForm");
+    const paymentCustomerName = document.getElementById("paymentCustomerName");
+    const paymentBalance = document.getElementById("paymentBalance");
+    const paymentAmount = document.getElementById("paymentAmount");
+    const paymentWriteOff = document.getElementById("paymentWriteOff");
+    const paymentDate = document.getElementById("paymentDate");
+    const paymentPreview = document.getElementById("paymentPreview");
+    const paymentError = document.getElementById("paymentError");
+    const paymentCancelButton = document.getElementById("paymentCancelButton");
+    const paymentSaveButton = document.getElementById("paymentSaveButton");
+    const recordDialog = document.getElementById("recordDialog");
+    const recordDialogTitle = document.getElementById("recordDialogTitle");
+    const recordDialogSubtitle = document.getElementById("recordDialogSubtitle");
+    const recordCloseButton = document.getElementById("recordCloseButton");
+    const recordBody = document.getElementById("recordBody");
+    const recordError = document.getElementById("recordError");
+    const recordActions = document.getElementById("recordActions");
+    const toastEl = document.getElementById("toast");
+
+    let currentView = "home"; // home 或 ledger
+    let currentCustomerId = null;
+    let toastTimer = null;
+    let toastHideTimer = null;
+    let data = loadData();
+    let storageAvailable = canUseStorage();
+    let lastSaveError = "";
+    let currentPaymentCustomerId = null;
+    let currentPaymentBalance = 0;
+    let sortMode = loadSortMode();
+    let sortAnimating = false;
+    let pendingNewSaleId = "";
+    let pendingNewPaymentId = "";
+    let pendingNewCustomerId = "";
+    let recordSaleId = "";
+    let recordCustomerId = "";
+    let recordMode = "view";
+    let recordDraft = null;
+    let recordActionBusy = false;
+
+    // ---------- 数据存取 ----------
+    function emptyData() {
+      return {
+        app: APP_NAME,
+        version: APP_VERSION,
+        customers: [],
+        sales: [],
+        payments: []
+      };
+    }
+
+    function isKnownAppName(name) {
+      return name === APP_NAME || name === LEGACY_APP_NAME;
+    }
+
+    function migrateStoredData(saved) {
+      if (
+        !saved ||
+        !isKnownAppName(saved.app) ||
+        !Array.isArray(saved.customers) ||
+        !Array.isArray(saved.sales)
+      ) {
+        throw new Error("本地账本格式不正确");
+      }
+
+      // 旧版没有收款记录，读进来时补一个空数组，不丢原来的赊销数据。
+      if (saved.version === 1) {
+        return {
+          ...saved,
+          app: APP_NAME,
+          version: APP_VERSION,
+          payments: []
+        };
+      }
+
+      if (
+        saved.version !== APP_VERSION ||
+        !Array.isArray(saved.payments)
+      ) {
+        throw new Error("本地账本版本不支持");
+      }
+
+      return {
+        ...saved,
+        app: APP_NAME
+      };
+    }
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return emptyData();
+
+        const saved = JSON.parse(raw);
+        return migrateStoredData(saved);
+      } catch (error) {
+        console.error("读取本地账本失败：", error);
+        showToast("本地账本读取失败，请先导入之前的备份", true);
+        return emptyData();
+      }
+    }
+
+    function loadSortMode() {
+      try {
+        return localStorage.getItem(SORT_KEY) === "age" ? "age" : "amount";
+      } catch (error) {
+        return "amount";
+      }
+    }
+
+    function saveSortMode() {
+      try {
+        localStorage.setItem(SORT_KEY, sortMode);
+      } catch (error) {
+        // 排序偏好存不了也不影响当前页面的切换。
+      }
+    }
+
+    function canUseStorage() {
+      try {
+        const testKey = STORAGE_KEY + ".test";
+        localStorage.setItem(testKey, "1");
+        localStorage.removeItem(testKey);
+        return true;
+      } catch (error) {
+        console.error("浏览器不允许本地存储：", error);
+        return false;
+      }
+    }
+
+    function commitData(nextData) {
+      lastSaveError = "";
+      try {
+        nextData.app = APP_NAME;
+        nextData.version = APP_VERSION;
+        if (!Array.isArray(nextData.payments)) nextData.payments = [];
+        nextData.updatedAt = new Date().toISOString();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextData));
+        data = nextData;
+        return true;
+      } catch (error) {
+        console.error("保存失败：", error);
+
+        if (error && error.name === "QuotaExceededError") {
+          lastSaveError =
+            "浏览器存储空间不足，这笔没有保存。请先清理浏览器空间。";
+        } else {
+          lastSaveError =
+            "这笔没有保存：当前页面不允许本地存储。请用 Edge 或 Chrome 直接打开文件，不要用聊天软件里的预览。";
+          storageAvailable = false;
+          showStorageNotice();
+        }
+        return false;
+      }
+    }
+
+    function showStorageNotice() {
+      storageNotice.hidden = false;
+      storageNotice.innerHTML =
+        "<strong>当前打开方式不能保存数据</strong>" +
+        "请到文件夹里双击 index.html，用 Edge 或 Chrome 打开；不要在聊天软件的文件预览里录入。";
+      addButton.disabled = true;
+      addButton.textContent = "当前无法保存，请换浏览器打开";
+      paymentButton.disabled = true;
+    }
+
+    // ---------- 小工具 ----------
+    function makeId(prefix) {
+      return (
+        prefix +
+        Date.now().toString(36) +
+        Math.random().toString(36).slice(2, 7)
+      );
+    }
+
+    function escapeHtml(value) {
+      const chars = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      };
+      return String(value).replace(/[&<>"']/g, (char) => chars[char]);
+    }
+
+    const moneyFormatter = new Intl.NumberFormat("zh-CN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    function formatMoney(cents) {
+      return "¥" + moneyFormatter.format(cents / 100);
+    }
+
+    function pad2(number) {
+      return String(number).padStart(2, "0");
+    }
+
+    function todayString() {
+      const now = new Date();
+      return (
+        now.getFullYear() +
+        "-" +
+        pad2(now.getMonth() + 1) +
+        "-" +
+        pad2(now.getDate())
+      );
+    }
+
+    function parseDateParts(dateString) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+      if (!match) return null;
+
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const date = new Date(year, month - 1, day);
+
+      if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+      ) {
+        return null;
+      }
+      return { year, month, day };
+    }
+
+    function formatDate(dateString) {
+      const parts = parseDateParts(dateString);
+      if (!parts) return dateString;
+      return parts.year + "年" + parts.month + "月" + parts.day + "日";
+    }
+
+    function daysSince(dateString) {
+      const parts = parseDateParts(dateString);
+      if (!parts) return 0;
+
+      const startUtc = Date.UTC(parts.year, parts.month - 1, parts.day);
+      const now = new Date();
+      const todayUtc = Date.UTC(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate()
+      );
+
+      return Math.max(0, Math.floor((todayUtc - startUtc) / DAY_MS));
+    }
+
+    function yuanToCents(value) {
+      const raw = String(value).trim();
+      if (raw === "") return 0;
+      if (!/^\d+(\.\d{1,2})?$/.test(raw)) return NaN;
+
+      const cents = Math.round(Number(raw) * 100);
+      return Number.isSafeInteger(cents) ? cents : NaN;
+    }
+
+    function balanceOf(sale) {
+      return Math.max(0, sale.amountCents - sale.paidCents);
+    }
+
+    function getCustomerStats(customerId) {
+      // 先把每笔赊账的“初始未付”算出来；后面的收款再按最早欠款逐笔冲减。
+      const sales = data.sales
+        .filter((sale) => sale.customerId === customerId)
+        .map((sale) => ({
+          ...sale,
+          remaining: balanceOf(sale),
+          paidLaterCents: 0,
+          writtenOffCents: 0,
+          paymentEvents: []
+        }))
+        .sort(
+          (a, b) =>
+            a.date.localeCompare(b.date) ||
+            String(a.createdAt).localeCompare(String(b.createdAt))
+        );
+
+      const payments = (data.payments || [])
+        .filter((payment) => payment.customerId === customerId)
+        .sort(
+          (a, b) =>
+            a.date.localeCompare(b.date) ||
+            String(a.createdAt).localeCompare(String(b.createdAt))
+        );
+
+      for (const payment of payments) {
+        let cashLeft = payment.amountCents;
+        let writeOffLeft = payment.writeOffCents;
+
+        for (const sale of sales) {
+          if (sale.remaining <= 0) continue;
+
+          const cashApplied = Math.min(sale.remaining, cashLeft);
+          sale.remaining -= cashApplied;
+          sale.paidLaterCents += cashApplied;
+          cashLeft -= cashApplied;
+
+          let writeOffApplied = 0;
+          if (sale.remaining > 0) {
+            writeOffApplied = Math.min(sale.remaining, writeOffLeft);
+            sale.remaining -= writeOffApplied;
+            sale.writtenOffCents += writeOffApplied;
+            writeOffLeft -= writeOffApplied;
+          }
+
+          if (cashApplied > 0 || writeOffApplied > 0) {
+            sale.paymentEvents.push({
+              paymentId: payment.id,
+              date: payment.date,
+              cashCents: cashApplied,
+              writeOffCents: writeOffApplied,
+              createdAt: payment.createdAt
+            });
+          }
+
+          if (cashLeft <= 0 && writeOffLeft <= 0) break;
+        }
+      }
+
+      let balance = 0;
+      let openCount = 0;
+      let oldestDays = 0;
+      let totalWriteOff = 0;
+      let lastActivityDate = "";
+
+      for (const sale of sales) {
+        if (sale.date > lastActivityDate) lastActivityDate = sale.date;
+        if (sale.remaining > 0) {
+          balance += sale.remaining;
+          openCount += 1;
+          oldestDays = Math.max(oldestDays, daysSince(sale.date));
+        }
+      }
+
+      for (const payment of payments) {
+        totalWriteOff += payment.writeOffCents;
+        if (payment.date > lastActivityDate) lastActivityDate = payment.date;
+      }
+
+      const newestPayments = [...payments].sort(
+        (a, b) =>
+          b.date.localeCompare(a.date) ||
+          String(b.createdAt).localeCompare(String(a.createdAt))
+      );
+
+      return {
+        sales,
+        payments: newestPayments,
+        balance,
+        openCount,
+        oldestDays,
+        totalWriteOff,
+        lastActivityDate
+      };
+    }
+
+    function getAllCustomerSummaries() {
+      return data.customers.map((customer) => ({
+        ...customer,
+        ...getCustomerStats(customer.id)
+      }));
+    }
+
+    function getDebtors() {
+      return getAllCustomerSummaries()
+        .filter((customer) => customer.balance > 0)
+        .sort((a, b) => {
+          if (sortMode === "age") {
+            if (b.oldestDays !== a.oldestDays) {
+              return b.oldestDays - a.oldestDays;
+            }
+            if (b.balance !== a.balance) return b.balance - a.balance;
+          } else {
+            if (b.balance !== a.balance) return b.balance - a.balance;
+            if (b.oldestDays !== a.oldestDays) {
+              return b.oldestDays - a.oldestDays;
+            }
+          }
+          return a.name.localeCompare(b.name, "zh-CN");
+        });
+    }
+
+    function getSettledCustomers() {
+      return getAllCustomerSummaries()
+        .filter(
+          (customer) => customer.balance === 0 && customer.sales.length > 0
+        )
+        .sort(
+          (a, b) =>
+            b.lastActivityDate.localeCompare(a.lastActivityDate) ||
+            a.name.localeCompare(b.name, "zh-CN")
+        );
+    }
+
+    function getCustomerPaymentReduction(customerId) {
+      return (data.payments || [])
+        .filter((payment) => payment.customerId === customerId)
+        .reduce(
+          (sum, payment) =>
+            sum + payment.amountCents + payment.writeOffCents,
+          0
+        );
+    }
+
+    function getOriginalDebtForSales(customerId, sales) {
+      return sales
+        .filter((sale) => sale.customerId === customerId)
+        .reduce(
+          (sum, sale) =>
+            sum + Math.max(0, sale.amountCents - sale.paidCents),
+          0
+        );
+    }
+
+    function wouldOverpay(customerId, sales) {
+      return (
+        getCustomerPaymentReduction(customerId) >
+        getOriginalDebtForSales(customerId, sales)
+      );
+    }
+
+    // ---------- 页面渲染 ----------
+    function renderApp() {
+      if (currentView === "ledger" && currentCustomerId) {
+        const customer = data.customers.find(
+          (item) => item.id === currentCustomerId
+        );
+        if (!customer) {
+          currentView = "home";
+          currentCustomerId = null;
+          renderHome();
+          updateChrome();
+          return;
+        }
+        renderLedger(customer);
+      } else {
+        renderHome();
+      }
+
+      updateChrome();
+    }
+
+    function updateChrome() {
+      const isLedger = currentView === "ledger";
+      const currentCustomer = isLedger
+        ? data.customers.find((item) => item.id === currentCustomerId)
+        : null;
+      const hasDebt =
+        !!currentCustomer && getCustomerStats(currentCustomer.id).balance > 0;
+
+      backButton.hidden = !isLedger;
+      pageTitle.textContent = isLedger ? "客户账本" : "云岸笔记";
+      pageSubtitle.textContent = isLedger
+        ? "赊销、收款与当前欠款"
+        : "欠款与账龄，一眼看清";
+
+      if (storageAvailable) {
+        addButton.disabled = false;
+        addButton.textContent = isLedger
+          ? "＋ 记赊账"
+          : "＋ 记一笔赊账";
+      } else {
+        addButton.disabled = true;
+        addButton.textContent = "当前无法保存，请换浏览器打开";
+      }
+
+      paymentButton.hidden = !isLedger || !hasDebt;
+      paymentButton.disabled = !storageAvailable;
+      dataTools.hidden = isLedger;
+    }
+
+    function sortButtonHtml() {
+      const isAge = sortMode === "age";
+      const label = isAge ? "账龄优先" : "欠款额优先";
+      const ariaLabel = isAge
+        ? "当前按账龄从长到短排序，点击改为按欠款额从多到少排序"
+        : "当前按欠款额从多到少排序，点击改为按账龄从长到短排序";
+
+      return (
+        '<button class="sort-toggle" id="sortButton" type="button" data-mode="' +
+        sortMode +
+        '" aria-label="' +
+        ariaLabel +
+        '" title="切换排序">' +
+        '<span class="sort-dot" aria-hidden="true"></span>' +
+        '<span class="sort-label">' +
+        label +
+        "</span>" +
+        '<span class="sort-swap" aria-hidden="true">' +
+        '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M4 7h11M12 4l3 3-3 3M16 13H5M8 10l-3 3 3 3"/>' +
+        "</svg>" +
+        "</span>" +
+        "</button>"
+      );
+    }
+
+    function renderHome() {
+      const debtors = getDebtors();
+      const total = debtors.reduce(
+        (sum, customer) => sum + customer.balance,
+        0
+      );
+      const maxAge = debtors.reduce(
+        (max, customer) => Math.max(max, customer.oldestDays),
+        0
+      );
+
+      let summaryNote = "还没有未结清的欠款";
+      if (debtors.length > 0) {
+        summaryNote =
+          debtors.length +
+          " 位客户 · 最长拖欠 " +
+          maxAge +
+          " 天";
+      }
+
+      const cards = debtors
+        .map((customer) => {
+          const overdueText =
+            customer.oldestDays > 60
+              ? '<span class="overdue-inline">超过 60 天</span>'
+              : "";
+          return (
+            '<button class="customer-card' +
+            (customer.oldestDays > 60 ? " has-overdue" : "") +
+            (customer.id === pendingNewCustomerId ? " item-enter" : "") +
+            '" type="button" data-customer-id="' +
+            escapeHtml(customer.id) +
+            '">' +
+            '<span class="customer-main">' +
+            '<span class="customer-name">' +
+            escapeHtml(customer.name) +
+            "</span>" +
+            '<span class="customer-meta">' +
+            '<span class="meta-main">' +
+            customer.openCount +
+            " 笔未结清 · 最久 " +
+            customer.oldestDays +
+            " 天</span>" +
+            overdueText +
+            "</span>" +
+            "</span>" +
+            '<span class="customer-side">' +
+            '<span class="customer-amount">' +
+            formatMoney(customer.balance) +
+            "</span>" +
+            '<span class="customer-arrow" aria-hidden="true">›</span>' +
+            "</span>" +
+            "</button>"
+          );
+        })
+        .join("");
+
+      const emptyDescription = storageAvailable
+        ? "点下面的“记一笔赊账”，第一笔就记上了。"
+        : "请按上方提示，用 Edge 或 Chrome 直接打开文件。";
+
+      const listHtml =
+        debtors.length > 0
+          ? '<div class="customer-list">' + cards + "</div>"
+          : '<div class="empty-state">' +
+            '<div class="empty-mark" aria-hidden="true">账</div>' +
+            "<h3>还没有欠款</h3>" +
+            "<p>" +
+            emptyDescription +
+            "</p>" +
+            "</div>";
+
+      const settled = getSettledCustomers();
+      const settledRows = settled
+        .map(
+          (customer) =>
+            '<button class="settled-card' +
+            (customer.id === pendingNewCustomerId ? " item-enter" : "") +
+            '" type="button" data-customer-id="' +
+            escapeHtml(customer.id) +
+            '">' +
+            "<span>" +
+            escapeHtml(customer.name) +
+            "</span>" +
+            '<span class="settled-label">已结清 ›</span>' +
+            "</button>"
+        )
+        .join("");
+
+      const settledHtml =
+        settled.length > 0
+          ? '<details class="settled-group">' +
+            "<summary><span>已结清客户</span>" +
+            '<span class="settled-count">' +
+            settled.length +
+            " 位 · 查看 ›</span></summary>" +
+            '<div class="settled-list">' +
+            settledRows +
+            "</div>" +
+            "</details>"
+          : "";
+
+      mainEl.innerHTML =
+        '<section class="summary-card" aria-label="欠款汇总">' +
+        '<div class="summary-label">当前总欠款</div>' +
+        '<div class="summary-value">' +
+        formatMoney(total) +
+        "</div>" +
+        '<div class="summary-note">' +
+        summaryNote +
+        "</div>" +
+        "</section>" +
+        '<div class="section-heading customer-heading">' +
+        "<h2>客户欠款</h2>" +
+        (debtors.length > 0 ? sortButtonHtml() : "") +
+        "</div>" +
+        listHtml +
+        settledHtml;
+    }
+
+    function renderLedger(customer) {
+      const stats = getCustomerStats(customer.id);
+      const sortedSales = [...stats.sales].sort((a, b) => {
+        const aOpen = a.remaining > 0;
+        const bOpen = b.remaining > 0;
+
+        if (aOpen !== bOpen) return aOpen ? -1 : 1;
+        if (aOpen) {
+          return (
+            a.date.localeCompare(b.date) ||
+            String(a.createdAt).localeCompare(String(b.createdAt))
+          );
+        }
+        return (
+          b.date.localeCompare(a.date) ||
+          String(b.createdAt).localeCompare(String(a.createdAt))
+        );
+      });
+
+      const records = sortedSales
+        .map((sale) => {
+          const unpaid = sale.remaining;
+          const isOpen = unpaid > 0;
+          const age = isOpen ? daysSince(sale.date) : 0;
+          const isOverdue = isOpen && age > 60;
+          const paidTotal = sale.paidCents + sale.paidLaterCents;
+          const writeOffText =
+            sale.writtenOffCents > 0
+              ? " · 抹零 " + formatMoney(sale.writtenOffCents)
+              : "";
+
+          return (
+            '<article class="sale-card' +
+            (isOverdue ? " overdue" : "") +
+            (sale.id === pendingNewSaleId ? " item-enter" : "") +
+            '" role="button" tabindex="0" aria-haspopup="dialog" aria-label="查看 ' +
+            escapeHtml(sale.item) +
+            ' 的赊销详情" data-sale-id="' +
+            escapeHtml(sale.id) +
+            '">' +
+            '<div class="sale-top">' +
+            '<span class="sale-date">' +
+            formatDate(sale.date) +
+            "</span>" +
+            '<span class="status' +
+            (isOpen ? " open" : "") +
+            '">' +
+            (isOpen ? "未结清" : "已结清") +
+            "</span>" +
+            "</div>" +
+            '<div class="sale-main">' +
+            '<span class="sale-item">' +
+            escapeHtml(sale.item) +
+            "</span>" +
+            '<span class="sale-unpaid' +
+            (isOpen ? "" : " closed") +
+            '">' +
+            (isOpen ? "未付 " + formatMoney(unpaid) : "已结清") +
+            "</span>" +
+            "</div>" +
+            '<div class="sale-details">金额 ' +
+            formatMoney(sale.amountCents) +
+            " · 已付 " +
+            formatMoney(paidTotal) +
+            writeOffText +
+            "</div>" +
+            '<div class="sale-footer">' +
+            (isOpen
+              ? '<div class="sale-age">' +
+                (isOverdue
+                  ? '<span class="overdue-label">超过 60 天</span>'
+                  : "") +
+                "<span>已拖欠 " +
+                age +
+                " 天</span>" +
+                "</div>"
+              : "") +
+            '<span class="sale-open-hint">详情 ›</span>' +
+            "</div>" +
+            "</article>"
+          );
+        })
+        .join("");
+
+      const paymentRows = stats.payments
+        .map((payment) => {
+          const cash =
+            payment.amountCents > 0
+              ? '<span class="payment-cash">收款 ' +
+                formatMoney(payment.amountCents) +
+                "</span>"
+              : "";
+          const writeOff =
+            payment.writeOffCents > 0
+              ? '<span class="writeoff-pill">抹零 ' +
+                formatMoney(payment.writeOffCents) +
+                "</span>"
+              : "";
+          return (
+            '<article class="payment-row' +
+            (payment.id === pendingNewPaymentId ? " item-enter" : "") +
+            '">' +
+            '<span class="payment-date">' +
+            formatDate(payment.date) +
+            "</span>" +
+            '<span class="payment-values">' +
+            cash +
+            writeOff +
+            "</span>" +
+            "</article>"
+          );
+        })
+        .join("");
+
+      const paymentsHtml =
+        stats.payments.length > 0
+          ? '<div class="section-heading">' +
+            "<h2>收款记录</h2>" +
+            "<span>共 " +
+            stats.payments.length +
+            " 笔</span>" +
+            "</div>" +
+            '<div class="payment-list">' +
+            paymentRows +
+            "</div>"
+          : "";
+
+      const meta =
+        stats.sales.length +
+        " 笔记录 · " +
+        (stats.openCount > 0
+          ? stats.openCount +
+            " 笔未结清" +
+            (stats.oldestDays > 0
+              ? " · 最久 " + stats.oldestDays + " 天"
+              : "")
+          : "已全部结清");
+
+      const writeOffNote =
+        stats.totalWriteOff > 0
+          ? '<div class="writeoff-note">累计抹零 ' +
+            formatMoney(stats.totalWriteOff) +
+            "</div>"
+          : "";
+
+      const recordsHtml =
+        sortedSales.length > 0
+          ? '<div class="record-list">' + records + "</div>"
+          : '<div class="empty-state">' +
+            '<div class="empty-mark" aria-hidden="true">账</div>' +
+            "<h3>还没有赊销记录</h3>" +
+            "<p>点下面的按钮给这位客户记一笔。</p>" +
+            "</div>";
+
+      mainEl.innerHTML =
+        '<section class="ledger-summary">' +
+        '<div class="ledger-kicker">客户</div>' +
+        '<h2 class="ledger-name">' +
+        escapeHtml(customer.name) +
+        "</h2>" +
+        '<div class="ledger-label">当前欠款</div>' +
+        '<div class="ledger-balance">' +
+        formatMoney(stats.balance) +
+        "</div>" +
+        '<div class="ledger-meta">' +
+        meta +
+        "</div>" +
+        writeOffNote +
+        "</section>" +
+        '<div class="section-heading">' +
+        "<h2>赊销记录</h2>" +
+        "<span>未结清在前 · 由早到晚</span>" +
+        "</div>" +
+        recordsHtml +
+        paymentsHtml;
+    }
+
+    function prefersReducedMotion() {
+      return (
+        window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      );
+    }
+
+    function playViewEnter() {
+      mainEl.classList.remove("view-enter");
+      if (prefersReducedMotion()) return;
+      void mainEl.offsetWidth;
+      mainEl.classList.add("view-enter");
+    }
+
+    function captureCustomerPositions() {
+      const positions = new Map();
+      mainEl.querySelectorAll(".customer-card").forEach((card) => {
+        positions.set(card.dataset.customerId, card.getBoundingClientRect().top);
+      });
+      return positions;
+    }
+
+    function animateSortReorder(oldPositions) {
+      if (!oldPositions || prefersReducedMotion()) return;
+
+      const cards = [...mainEl.querySelectorAll(".customer-card")];
+      const moved = [];
+
+      for (const card of cards) {
+        const oldTop = oldPositions.get(card.dataset.customerId);
+        if (oldTop === undefined) continue;
+
+        const delta = oldTop - card.getBoundingClientRect().top;
+        if (Math.abs(delta) < 1) continue;
+
+        card.style.transition = "none";
+        card.style.transform = "translateY(" + delta + "px)";
+        moved.push(card);
+      }
+
+      if (moved.length === 0) return;
+
+      sortAnimating = true;
+      void mainEl.offsetHeight;
+
+      requestAnimationFrame(() => {
+        for (const card of moved) {
+          card.style.transition = "transform 0.3s var(--ease-out)";
+          card.style.transform = "translateY(0)";
+        }
+      });
+
+      setTimeout(() => {
+        for (const card of moved) {
+          card.style.transition = "";
+          card.style.transform = "";
+        }
+        sortAnimating = false;
+      }, 340);
+    }
+
+    function toggleSortMode() {
+      const oldPositions = sortAnimating ? null : captureCustomerPositions();
+      sortMode = sortMode === "amount" ? "age" : "amount";
+      saveSortMode();
+      renderHome();
+      animateSortReorder(oldPositions);
+
+      const nextButton = document.getElementById("sortButton");
+      if (nextButton) {
+        try {
+          nextButton.focus({ preventScroll: true });
+        } catch (error) {
+          nextButton.focus();
+        }
+      }
+    }
+
+    function showHome() {
+      currentView = "home";
+      currentCustomerId = null;
+      renderApp();
+      window.scrollTo(0, 0);
+      playViewEnter();
+    }
+
+    function openLedger(customerId) {
+      const customer = data.customers.find((item) => item.id === customerId);
+      if (!customer) {
+        showToast("没有找到这位客户", true);
+        return;
+      }
+
+      currentView = "ledger";
+      currentCustomerId = customerId;
+      renderApp();
+      window.scrollTo(0, 0);
+      playViewEnter();
+    }
+
+    // ---------- 赊销登记 ----------
+    function openSaleDialog() {
+      if (!storageAvailable) {
+        showStorageNotice();
+        showToast("当前页面不能保存数据，请用 Edge 或 Chrome 直接打开文件", true);
+        return;
+      }
+
+      saleForm.reset();
+      formError.hidden = true;
+      saleDate.value = todayString();
+      saleDate.max = todayString();
+      paidInput.value = "0";
+
+      const sortedCustomers = [...data.customers].sort((a, b) =>
+        a.name.localeCompare(b.name, "zh-CN")
+      );
+
+      customerSelect.innerHTML =
+        '<option value="">请选择客户</option>' +
+        sortedCustomers
+          .map(
+            (customer) =>
+              '<option value="' +
+              escapeHtml(customer.id) +
+              '">' +
+              escapeHtml(customer.name) +
+              "</option>"
+          )
+          .join("") +
+        '<option value="__new__">＋ 新客户</option>';
+
+      if (currentView === "ledger" && currentCustomerId) {
+        customerSelect.value = currentCustomerId;
+      } else if (data.customers.length === 0) {
+        customerSelect.value = "__new__";
+      }
+
+      syncNewCustomerField();
+      saleDialog.showModal();
+      document.body.classList.add("dialog-open");
+
+      if (customerSelect.value === "__new__") {
+        setTimeout(() => newCustomerName.focus(), 60);
+      }
+    }
+
+    function syncNewCustomerField() {
+      const isNew = customerSelect.value === "__new__";
+      newCustomerField.hidden = !isNew;
+      newCustomerName.disabled = !isNew;
+
+      if (isNew) {
+        newCustomerName.focus();
+      } else {
+        newCustomerName.value = "";
+      }
+    }
+
+    function showFormError(message) {
+      formError.textContent = message;
+      formError.hidden = false;
+    }
+
+    function handleSaleSubmit(event) {
+      event.preventDefault();
+      formError.hidden = true;
+
+      const selectedCustomer = customerSelect.value;
+      if (!selectedCustomer) {
+        showFormError("请先选择客户。");
+        customerSelect.focus();
+        return;
+      }
+
+      let customer = null;
+      let nextCustomers = data.customers;
+
+      if (selectedCustomer === "__new__") {
+        const name = newCustomerName.value.trim().replace(/\s+/g, " ");
+        if (!name) {
+          showFormError("请填写新客户的名字。");
+          newCustomerName.focus();
+          return;
+        }
+
+        const sameName = data.customers.find(
+          (item) => item.name.trim().toLowerCase() === name.toLowerCase()
+        );
+        if (sameName) {
+          showFormError("已经有这位客户了，请直接在上面选择。");
+          customerSelect.focus();
+          return;
+        }
+
+        customer = {
+          id: makeId("c"),
+          name,
+          createdAt: new Date().toISOString()
+        };
+        nextCustomers = [...data.customers, customer];
+      } else {
+        customer = data.customers.find(
+          (item) => item.id === selectedCustomer
+        );
+        if (!customer) {
+          showFormError("没有找到这位客户，请重新选择。");
+          return;
+        }
+      }
+
+      const item = itemInput.value.trim();
+      if (!item) {
+        showFormError("请填写配件名或备注。");
+        itemInput.focus();
+        return;
+      }
+
+      const amountCents = yuanToCents(amountInput.value);
+      if (!Number.isFinite(amountCents) || amountCents <= 0) {
+        showFormError("请填写正确的金额，必须大于 0。");
+        amountInput.focus();
+        return;
+      }
+
+      const paidCents = yuanToCents(paidInput.value);
+      if (!Number.isFinite(paidCents) || paidCents < 0) {
+        showFormError("请填写正确的已付金额。");
+        paidInput.focus();
+        return;
+      }
+
+      if (paidCents > amountCents) {
+        showFormError("已付金额不能大于这笔金额。");
+        paidInput.focus();
+        return;
+      }
+
+      if (!parseDateParts(saleDate.value)) {
+        showFormError("请选择正确的日期。");
+        saleDate.focus();
+        return;
+      }
+
+      if (saleDate.value > todayString()) {
+        showFormError("日期不能晚于今天。");
+        saleDate.focus();
+        return;
+      }
+
+      const sale = {
+        id: makeId("s"),
+        customerId: customer.id,
+        date: saleDate.value,
+        item,
+        amountCents,
+        paidCents,
+        createdAt: new Date().toISOString()
+      };
+
+      const nextData = {
+        ...data,
+        customers: nextCustomers,
+        sales: [...data.sales, sale]
+      };
+
+      saveButton.disabled = true;
+      const saved = commitData(nextData);
+      saveButton.disabled = false;
+
+      if (!saved) {
+        showFormError(
+          lastSaveError || "没有保存成功，请换用浏览器重新打开。"
+        );
+        return;
+      }
+
+      saleDialog.close();
+
+      if (currentView === "ledger") {
+        currentCustomerId = customer.id;
+      }
+
+      pendingNewSaleId = sale.id;
+      pendingNewCustomerId =
+        selectedCustomer === "__new__" ? customer.id : "";
+      renderApp();
+      pendingNewSaleId = "";
+      pendingNewCustomerId = "";
+
+      showToast("已记到 " + customer.name + " 名下");
+    }
+
+    // ---------- 收款登记 ----------
+    function showPaymentError(message) {
+      paymentError.textContent = message;
+      paymentError.hidden = false;
+    }
+
+    function updatePaymentPreview() {
+      paymentError.hidden = true;
+      const amountCents = yuanToCents(paymentAmount.value);
+      const writeOffCents = yuanToCents(paymentWriteOff.value);
+
+      if (!Number.isFinite(amountCents) || !Number.isFinite(writeOffCents)) {
+        paymentPreview.textContent = "请输入正确的金额";
+        paymentPreview.classList.add("over");
+        return;
+      }
+
+      const totalCents = amountCents + writeOffCents;
+      if (totalCents > currentPaymentBalance) {
+        paymentPreview.textContent =
+          "超过当前欠款 " + formatMoney(currentPaymentBalance);
+        paymentPreview.classList.add("over");
+        return;
+      }
+
+      paymentPreview.classList.remove("over");
+      paymentPreview.textContent =
+        "本次抵扣 " +
+        formatMoney(totalCents) +
+        "，剩余欠款 " +
+        formatMoney(Math.max(0, currentPaymentBalance - totalCents));
+    }
+
+    function openPaymentDialog() {
+      if (!storageAvailable) {
+        showStorageNotice();
+        showToast("当前页面不能保存数据，请用 Edge 或 Chrome 直接打开文件", true);
+        return;
+      }
+
+      const customer = data.customers.find(
+        (item) => item.id === currentCustomerId
+      );
+      if (!customer) {
+        showToast("没有找到这位客户", true);
+        return;
+      }
+
+      const stats = getCustomerStats(customer.id);
+      if (stats.balance <= 0) {
+        showToast("这位客户已经结清了");
+        return;
+      }
+
+      currentPaymentCustomerId = customer.id;
+      currentPaymentBalance = stats.balance;
+      paymentCustomerName.textContent = customer.name;
+      paymentBalance.textContent = formatMoney(stats.balance);
+      paymentAmount.value = "";
+      paymentWriteOff.value = "0";
+      paymentDate.value = todayString();
+      paymentDate.max = todayString();
+      paymentError.hidden = true;
+      updatePaymentPreview();
+
+      paymentDialog.showModal();
+      document.body.classList.add("dialog-open");
+      setTimeout(() => paymentAmount.focus(), 60);
+    }
+
+    function handlePaymentSubmit(event) {
+      event.preventDefault();
+      paymentError.hidden = true;
+
+      const customer = data.customers.find(
+        (item) => item.id === currentPaymentCustomerId
+      );
+      if (!customer) {
+        showPaymentError("没有找到这位客户，请返回后重新打开。");
+        return;
+      }
+
+      const stats = getCustomerStats(customer.id);
+      if (stats.balance <= 0) {
+        showPaymentError("这位客户已经结清了。");
+        return;
+      }
+
+      const amountCents = yuanToCents(paymentAmount.value);
+      const writeOffCents = yuanToCents(paymentWriteOff.value);
+
+      if (!Number.isFinite(amountCents) || amountCents < 0) {
+        showPaymentError("请填写正确的收款金额。");
+        paymentAmount.focus();
+        return;
+      }
+
+      if (!Number.isFinite(writeOffCents) || writeOffCents < 0) {
+        showPaymentError("请填写正确的抹零金额。");
+        paymentWriteOff.focus();
+        return;
+      }
+
+      const totalCents = amountCents + writeOffCents;
+      if (totalCents <= 0) {
+        showPaymentError("请填写收款金额，或者填写抹零金额。");
+        paymentAmount.focus();
+        return;
+      }
+
+      if (totalCents > stats.balance) {
+        showPaymentError(
+          "收款加抹零不能超过当前欠款 " + formatMoney(stats.balance) + "。"
+        );
+        paymentAmount.focus();
+        return;
+      }
+
+      if (!parseDateParts(paymentDate.value)) {
+        showPaymentError("请选择正确的日期。");
+        paymentDate.focus();
+        return;
+      }
+
+      if (paymentDate.value > todayString()) {
+        showPaymentError("日期不能晚于今天。");
+        paymentDate.focus();
+        return;
+      }
+
+      const payment = {
+        id: makeId("p"),
+        customerId: customer.id,
+        date: paymentDate.value,
+        amountCents,
+        writeOffCents,
+        createdAt: new Date().toISOString()
+      };
+
+      const nextData = {
+        ...data,
+        payments: [...(data.payments || []), payment]
+      };
+
+      paymentSaveButton.disabled = true;
+      const saved = commitData(nextData);
+      paymentSaveButton.disabled = false;
+
+      if (!saved) {
+        showPaymentError(
+          lastSaveError || "没有保存成功，请换用浏览器重新打开。"
+        );
+        return;
+      }
+
+      paymentDialog.close();
+      pendingNewPaymentId = payment.id;
+      renderApp();
+      pendingNewPaymentId = "";
+      window.scrollTo(0, 0);
+
+      if (amountCents > 0) {
+        let message = "已收款 " + formatMoney(amountCents);
+        if (writeOffCents > 0) {
+          message += "，抹零 " + formatMoney(writeOffCents);
+        }
+        showToast(message);
+      } else {
+        showToast("已抹零 " + formatMoney(writeOffCents));
+      }
+    }
+
+    // ---------- 赊销详情、修改与删除 ----------
+    function getRecordContext() {
+      const customer = data.customers.find(
+        (item) => item.id === recordCustomerId
+      );
+      if (!customer) return null;
+
+      const stats = getCustomerStats(customer.id);
+      const sale = stats.sales.find((item) => item.id === recordSaleId);
+      if (!sale) return null;
+
+      return { customer, sale, stats };
+    }
+
+    function findSaleCardElement(saleId) {
+      return (
+        [...mainEl.querySelectorAll("[data-sale-id]")].find(
+          (card) => card.dataset.saleId === saleId
+        ) || null
+      );
+    }
+
+    function getSaleRepaymentEvents(sale) {
+      const events = [];
+      if (sale.paidCents > 0) {
+        events.push({
+          date: sale.date,
+          cashCents: sale.paidCents,
+          writeOffCents: 0,
+          initial: true
+        });
+      }
+      for (const event of sale.paymentEvents || []) {
+        events.push(event);
+      }
+      return events;
+    }
+
+    function formatCentsForInput(cents) {
+      return (cents / 100).toFixed(2);
+    }
+
+    function showRecordError(message, focusId) {
+      recordError.textContent = message;
+      recordError.hidden = false;
+      if (focusId) {
+        const target = document.getElementById(focusId);
+        if (target) target.focus();
+      }
+    }
+
+    function openRecordDialog(saleId) {
+      if (recordDialog.open) return;
+
+      const customer = data.customers.find(
+        (item) => item.id === currentCustomerId
+      );
+      const sale = data.sales.find(
+        (item) => item.id === saleId && item.customerId === currentCustomerId
+      );
+      if (!customer || !sale) {
+        showToast("没有找到这笔记录", true);
+        return;
+      }
+
+      recordSaleId = saleId;
+      recordCustomerId = customer.id;
+      recordMode = "view";
+      recordDraft = null;
+      recordActionBusy = false;
+      if (!renderRecordDialog()) return;
+      recordDialog.showModal();
+      document.body.classList.add("dialog-open");
+    }
+
+    function closeRecordDialog() {
+      if (recordDialog.open) recordDialog.close();
+    }
+
+    function renderRecordDetailHtml(customer, sale) {
+      const isOpen = sale.remaining > 0;
+      const age = daysSince(sale.date);
+      const paidTotal = sale.paidCents + sale.paidLaterCents;
+      const moneyParts = ["已付 " + formatMoney(paidTotal)];
+
+      if (sale.writtenOffCents > 0) {
+        moneyParts.push("抹零 " + formatMoney(sale.writtenOffCents));
+      }
+      moneyParts.push(
+        isOpen ? "未付 " + formatMoney(sale.remaining) : "已结清"
+      );
+
+      const repaymentEvents = getSaleRepaymentEvents(sale);
+      const repaymentHtml =
+        repaymentEvents.length > 0
+          ? repaymentEvents
+              .map((event) => {
+                const parts = [];
+                if (event.initial && event.cashCents > 0) {
+                  parts.push("记账时已付 " + formatMoney(event.cashCents));
+                } else if (event.cashCents > 0) {
+                  parts.push("收款 " + formatMoney(event.cashCents));
+                }
+                if (event.writeOffCents > 0) {
+                  parts.push(
+                    '<span class="writeoff-pill">抹零 ' +
+                      formatMoney(event.writeOffCents) +
+                      "</span>"
+                  );
+                }
+                return (
+                  '<div class="repayment-row">' +
+                  '<span class="repayment-date">' +
+                  formatDate(event.date) +
+                  "</span>" +
+                  '<span class="repayment-amount">' +
+                  parts.join(" ") +
+                  "</span>" +
+                  "</div>"
+                );
+              })
+              .join("")
+          : '<div class="record-empty">还没有还款</div>';
+
+      return (
+        '<div class="record-hero">' +
+        '<div class="record-hero-top">' +
+        '<span class="record-item">' +
+        escapeHtml(sale.item) +
+        "</span>" +
+        '<span class="status' +
+        (isOpen ? " open" : "") +
+        '">' +
+        (isOpen ? "未结清" : "已结清") +
+        "</span>" +
+        "</div>" +
+        '<div class="record-amount">' +
+        formatMoney(sale.amountCents) +
+        "</div>" +
+        '<div class="record-money-line">' +
+        moneyParts.join(" · ") +
+        "</div>" +
+        "</div>" +
+        '<div class="record-info">' +
+        '<div class="detail-row">' +
+        '<span class="detail-key">客户</span>' +
+        '<span class="detail-value">' +
+        escapeHtml(customer.name) +
+        "</span>" +
+        "</div>" +
+        '<div class="detail-row">' +
+        '<span class="detail-key">欠款时间</span>' +
+        '<span class="detail-value">' +
+        formatDate(sale.date) +
+        '<span class="record-age' +
+        (isOpen && age > 60 ? " is-overdue" : "") +
+        '">' +
+        (isOpen ? "已拖欠 " + age + " 天" : "已结清") +
+        "</span>" +
+        "</span>" +
+        "</div>" +
+        "</div>" +
+        '<div class="record-repayments">' +
+        '<div class="record-section-title">还款时间</div>' +
+        '<div class="repayment-list">' +
+        repaymentHtml +
+        "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderRecordEditHtml(customer) {
+      const draft = recordDraft;
+      return (
+        '<div class="record-edit">' +
+        '<label class="field">' +
+        "<span>日期</span>" +
+        '<input id="recordEditDate" type="date" max="' +
+        todayString() +
+        '" value="' +
+        escapeHtml(draft.date) +
+        '">' +
+        "</label>" +
+        '<label class="field">' +
+        "<span>配件 / 备注</span>" +
+        '<input id="recordEditItem" type="text" maxlength="40" value="' +
+        escapeHtml(draft.item) +
+        '">' +
+        "</label>" +
+        '<div class="field-row">' +
+        '<label class="field">' +
+        "<span>金额（元）</span>" +
+        '<input id="recordEditAmount" type="number" inputmode="decimal" step="0.01" min="0.01" value="' +
+        formatCentsForInput(draft.amountCents) +
+        '">' +
+        "</label>" +
+        '<label class="field">' +
+        "<span>记账时已付（元）</span>" +
+        '<input id="recordEditPaid" type="number" inputmode="decimal" step="0.01" min="0" value="' +
+        formatCentsForInput(draft.paidCents) +
+        '">' +
+        "</label>" +
+        "</div>" +
+        '<p class="hint">后续收款不在这里改；保存后会按新的金额重新自动冲账。</p>' +
+        "</div>"
+      );
+    }
+
+    function renderRecordConfirmEditHtml() {
+      const draft = recordDraft;
+      return (
+        '<div class="record-confirm">' +
+        '<div class="confirm-mark">?</div>' +
+        "<h3>确认要修改吗？</h3>" +
+        '<p class="confirm-note">（记错账可不是小事噢）</p>' +
+        '<div class="confirm-summary">' +
+        '<div class="confirm-row"><span>日期</span><strong>' +
+        formatDate(draft.date) +
+        "</strong></div>" +
+        '<div class="confirm-row"><span>配件 / 备注</span><strong>' +
+        escapeHtml(draft.item) +
+        "</strong></div>" +
+        '<div class="confirm-row"><span>金额</span><strong>' +
+        formatMoney(draft.amountCents) +
+        "</strong></div>" +
+        '<div class="confirm-row"><span>记账时已付</span><strong>' +
+        formatMoney(draft.paidCents) +
+        "</strong></div>" +
+        "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderRecordConfirmDeleteHtml(sale) {
+      return (
+        '<div class="record-confirm">' +
+        '<div class="confirm-mark">!</div>' +
+        "<h3>确认要删除该记录吗？</h3>" +
+        '<p class="confirm-note">（删了可就没了呦）</p>' +
+        '<div class="confirm-record">' +
+        escapeHtml(sale.item) +
+        " · " +
+        formatDate(sale.date) +
+        "<br>金额 " +
+        formatMoney(sale.amountCents) +
+        " · " +
+        (sale.remaining > 0
+          ? "未付 " + formatMoney(sale.remaining)
+          : "已结清") +
+        "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderRecordDialog() {
+      const context = getRecordContext();
+      if (!context) {
+        closeRecordDialog();
+        showToast("没有找到这笔记录", true);
+        return false;
+      }
+
+      const { customer, sale } = context;
+      const isOpen = sale.remaining > 0;
+      recordError.hidden = true;
+
+      if (recordMode === "edit") {
+        if (!recordDraft) {
+          recordDraft = {
+            date: sale.date,
+            item: sale.item,
+            amountCents: sale.amountCents,
+            paidCents: sale.paidCents
+          };
+        }
+        recordDialogTitle.textContent = "修改这笔赊账";
+        recordDialogSubtitle.textContent =
+          customer.name + " · 保存前还会再确认一次";
+        recordBody.innerHTML = renderRecordEditHtml(customer);
+        recordActions.innerHTML =
+          '<button class="secondary-button" type="button" data-record-action="cancel">取消</button>' +
+          '<button class="primary-button" type="button" data-record-action="saveEdit">保存修改</button>';
+      } else if (recordMode === "confirmEdit") {
+        if (!recordDraft) {
+          recordMode = "edit";
+          renderRecordDialog();
+          return;
+        }
+        recordDialogTitle.textContent = "确认修改";
+        recordDialogSubtitle.textContent = customer.name + " · 最后确认一次";
+        recordBody.innerHTML = renderRecordConfirmEditHtml();
+        recordActions.innerHTML =
+          '<button class="secondary-button" type="button" data-record-action="backToEdit">再想想</button>' +
+          '<button class="primary-button" type="button" data-record-action="confirmEdit">确认修改</button>';
+      } else if (recordMode === "confirmDelete") {
+        recordDialogTitle.textContent = "确认删除";
+        recordDialogSubtitle.textContent = customer.name + " · 删除后无法恢复";
+        recordBody.innerHTML = renderRecordConfirmDeleteHtml(sale);
+        recordActions.innerHTML =
+          '<button class="secondary-button" type="button" data-record-action="cancel">取消</button>' +
+          '<button class="danger-button solid" type="button" data-record-action="confirmDelete">确认删除</button>';
+      } else {
+        recordDialogTitle.textContent = "赊销详情";
+        recordDialogSubtitle.textContent =
+          customer.name + (isOpen ? " · 还有欠款" : " · 已结清");
+        recordBody.innerHTML = renderRecordDetailHtml(customer, sale);
+        recordActions.innerHTML =
+          '<button class="danger-button" type="button" data-record-action="delete">删除</button>' +
+          '<button class="primary-button" type="button" data-record-action="edit">修改</button>';
+      }
+
+      recordBody.classList.remove("record-mode-enter");
+      if (!prefersReducedMotion()) {
+        void recordBody.offsetWidth;
+        recordBody.classList.add("record-mode-enter");
+      }
+      recordBody.scrollTop = 0;
+      return true;
+    }
+
+    function startRecordEdit() {
+      const context = getRecordContext();
+      if (!context) return;
+
+      recordDraft = {
+        date: context.sale.date,
+        item: context.sale.item,
+        amountCents: context.sale.amountCents,
+        paidCents: context.sale.paidCents
+      };
+      recordMode = "edit";
+      renderRecordDialog();
+    }
+
+    function startRecordDelete() {
+      if (!getRecordContext()) return;
+      recordMode = "confirmDelete";
+      renderRecordDialog();
+    }
+
+    function cancelRecordMode() {
+      recordMode = "view";
+      recordDraft = null;
+      renderRecordDialog();
+    }
+
+    function backToRecordEdit() {
+      recordMode = "edit";
+      renderRecordDialog();
+    }
+
+    function readRecordEditDraft() {
+      const date = document.getElementById("recordEditDate").value;
+      const item = document.getElementById("recordEditItem").value.trim();
+      const amountCents = yuanToCents(
+        document.getElementById("recordEditAmount").value
+      );
+      const paidCents = yuanToCents(
+        document.getElementById("recordEditPaid").value
+      );
+
+      if (!item) {
+        showRecordError("请填写配件名或备注。", "recordEditItem");
+        return null;
+      }
+      if (!parseDateParts(date)) {
+        showRecordError("请选择正确的日期。", "recordEditDate");
+        return null;
+      }
+      if (date > todayString()) {
+        showRecordError("日期不能晚于今天。", "recordEditDate");
+        return null;
+      }
+      if (!Number.isFinite(amountCents) || amountCents <= 0) {
+        showRecordError("请填写正确的金额，必须大于 0。", "recordEditAmount");
+        return null;
+      }
+      if (!Number.isFinite(paidCents) || paidCents < 0) {
+        showRecordError("请填写正确的已付金额。", "recordEditPaid");
+        return null;
+      }
+      if (paidCents > amountCents) {
+        showRecordError("记账时已付不能大于金额。", "recordEditPaid");
+        return null;
+      }
+
+      if (
+        wouldOverpay(
+          recordCustomerId,
+          data.sales.map((sale) =>
+            sale.id === recordSaleId
+              ? {
+                  ...sale,
+                  amountCents,
+                  paidCents
+                }
+              : sale
+          )
+        )
+      ) {
+        showRecordError(
+          "修改后，这位客户的历史收款会超过总欠款，不能保存。可以把金额改大一点，或把记账时已付改小一点。"
+        );
+        return null;
+      }
+
+      return {
+        date,
+        item,
+        amountCents,
+        paidCents
+      };
+    }
+
+    function saveRecordEditDraft() {
+      const draft = readRecordEditDraft();
+      if (!draft) return;
+
+      recordDraft = draft;
+      recordMode = "confirmEdit";
+      renderRecordDialog();
+    }
+
+    function applyRecordEdit() {
+      if (recordActionBusy || !recordDraft) return;
+      recordActionBusy = true;
+
+      const draft = recordDraft;
+      const nextSales = data.sales.map((sale) =>
+        sale.id === recordSaleId
+          ? {
+              ...sale,
+              date: draft.date,
+              item: draft.item,
+              amountCents: draft.amountCents,
+              paidCents: draft.paidCents,
+              updatedAt: new Date().toISOString()
+            }
+          : sale
+      );
+
+      if (wouldOverpay(recordCustomerId, nextSales)) {
+        recordActionBusy = false;
+        showRecordError(
+          "修改后，这位客户的历史收款会超过总欠款，不能保存。"
+        );
+        return;
+      }
+
+      const editedSaleId = recordSaleId;
+      const nextData = {
+        ...data,
+        sales: nextSales
+      };
+
+      if (!commitData(nextData)) {
+        recordActionBusy = false;
+        showRecordError(lastSaveError || "修改没有保存成功。");
+        return;
+      }
+
+      closeRecordDialog();
+      renderApp();
+
+      const card = findSaleCardElement(editedSaleId);
+      if (card && !prefersReducedMotion()) {
+        card.classList.add("item-updated");
+        setTimeout(() => card.classList.remove("item-updated"), 800);
+      }
+      showToast("记录已修改");
+    }
+
+    function performDeleteSale(saleId, customerId, card) {
+      const nextSales = data.sales.filter((sale) => sale.id !== saleId);
+      const nextCustomers = data.customers.filter((customer) => {
+        if (customer.id !== customerId) return true;
+        const stillHasSales = nextSales.some(
+          (sale) => sale.customerId === customerId
+        );
+        const stillHasPayments = (data.payments || []).some(
+          (payment) => payment.customerId === customerId
+        );
+        return stillHasSales || stillHasPayments;
+      });
+
+      const nextData = {
+        ...data,
+        customers: nextCustomers,
+        sales: nextSales
+      };
+
+      if (!commitData(nextData)) {
+        if (card) card.classList.remove("item-leaving");
+        showToast(lastSaveError || "删除失败，记录还在", true);
+        return;
+      }
+
+      if (currentCustomerId === customerId) {
+        const customerStillExists = nextCustomers.some(
+          (customer) => customer.id === customerId
+        );
+        if (!customerStillExists) {
+          showHome();
+        } else {
+          renderApp();
+        }
+      } else {
+        renderApp();
+      }
+      showToast("记录已删除");
+    }
+
+    function confirmRecordDelete() {
+      if (recordActionBusy || !recordCustomerId) return;
+
+      const context = getRecordContext();
+      if (!context) return;
+
+      const nextSales = data.sales.filter(
+        (sale) => sale.id !== recordSaleId
+      );
+      if (wouldOverpay(recordCustomerId, nextSales)) {
+        showRecordError(
+          "删除后，这位客户的历史收款会超过剩余欠款，所以不能删除。这笔记录可能已经有后续收款了。"
+        );
+        return;
+      }
+
+      const saleId = recordSaleId;
+      const customerId = recordCustomerId;
+      const card = findSaleCardElement(saleId);
+      recordActionBusy = true;
+      closeRecordDialog();
+
+      if (!card || prefersReducedMotion()) {
+        performDeleteSale(saleId, customerId, card);
+        return;
+      }
+
+      card.classList.add("item-leaving");
+      setTimeout(() => {
+        performDeleteSale(saleId, customerId, card);
+      }, 260);
+    }
+
+    // ---------- 导出与恢复 ----------
+    function exportBackup() {
+      const payload = {
+        ...data,
+        app: APP_NAME,
+        version: APP_VERSION,
+        exportedAt: new Date().toISOString()
+      };
+
+      const json = JSON.stringify(payload, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = "云岸笔记备份-" + todayString() + ".json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      showToast("备份文件已导出");
+    }
+
+    function readBackupText(expected) {
+      if (!expected || typeof expected !== "string") {
+        throw new Error("备份内容不完整");
+      }
+      return expected.trim();
+    }
+
+    function parseBackup(text) {
+      let raw;
+      try {
+        raw = JSON.parse(text);
+      } catch (error) {
+        throw new Error("文件不是有效的 JSON 备份");
+      }
+
+      if (!raw || !isKnownAppName(raw.app)) {
+        throw new Error("这不是云岸笔记导出的备份文件");
+      }
+      if (raw.version !== 1 && raw.version !== APP_VERSION) {
+        throw new Error("备份版本不支持，请换成本工具的备份文件");
+      }
+      if (!Array.isArray(raw.customers) || !Array.isArray(raw.sales)) {
+        throw new Error("备份缺少客户或赊销记录");
+      }
+
+      const rawPayments = raw.version === 1 ? [] : raw.payments;
+      if (!Array.isArray(rawPayments)) {
+        throw new Error("备份的收款记录格式不正确");
+      }
+
+      const customerIds = new Set();
+      const customerNames = new Set();
+      const customers = raw.customers.map((item, index) => {
+        const row = index + 1;
+        if (!item || typeof item !== "object") {
+          throw new Error("第 " + row + " 位客户格式不正确");
+        }
+
+        const id = readBackupText(item.id);
+        const name = readBackupText(item.name);
+        if (!id || id.length > 100 || id === "__new__") {
+          throw new Error("第 " + row + " 位客户的编号不正确");
+        }
+        if (!name || name.length > 20) {
+          throw new Error("第 " + row + " 位客户的名字不正确");
+        }
+        if (customerIds.has(id)) {
+          throw new Error("备份里有重复的客户编号");
+        }
+        if (customerNames.has(name.toLowerCase())) {
+          throw new Error("备份里有重复的客户名字：" + name);
+        }
+
+        customerIds.add(id);
+        customerNames.add(name.toLowerCase());
+
+        return {
+          id,
+          name,
+          createdAt:
+            typeof item.createdAt === "string"
+              ? item.createdAt
+              : new Date().toISOString()
+        };
+      });
+
+      const saleIds = new Set();
+      const sales = raw.sales.map((item, index) => {
+        const row = index + 1;
+        if (!item || typeof item !== "object") {
+          throw new Error("第 " + row + " 笔记录格式不正确");
+        }
+
+        const id = readBackupText(item.id);
+        const customerId = readBackupText(item.customerId);
+        const itemName = readBackupText(item.item);
+        const date = readBackupText(item.date);
+
+        if (!id || id.length > 100 || saleIds.has(id)) {
+          throw new Error("第 " + row + " 笔记录的编号不正确");
+        }
+        if (!customerIds.has(customerId)) {
+          throw new Error("第 " + row + " 笔记录找不到对应客户");
+        }
+        if (!itemName || itemName.length > 40) {
+          throw new Error("第 " + row + " 笔记录的配件名不正确");
+        }
+        if (!parseDateParts(date)) {
+          throw new Error("第 " + row + " 笔记录的日期不正确");
+        }
+        if (
+          !Number.isSafeInteger(item.amountCents) ||
+          item.amountCents <= 0
+        ) {
+          throw new Error("第 " + row + " 笔记录的金额不正确");
+        }
+        if (
+          !Number.isSafeInteger(item.paidCents) ||
+          item.paidCents < 0 ||
+          item.paidCents > item.amountCents
+        ) {
+          throw new Error("第 " + row + " 笔记录的已付金额不正确");
+        }
+
+        saleIds.add(id);
+        return {
+          id,
+          customerId,
+          date,
+          item: itemName,
+          amountCents: item.amountCents,
+          paidCents: item.paidCents,
+          createdAt:
+            typeof item.createdAt === "string"
+              ? item.createdAt
+              : new Date().toISOString()
+        };
+      });
+
+      const paymentIds = new Set();
+      const payments = rawPayments.map((item, index) => {
+        const row = index + 1;
+        if (!item || typeof item !== "object") {
+          throw new Error("第 " + row + " 笔收款记录格式不正确");
+        }
+
+        const id = readBackupText(item.id);
+        const customerId = readBackupText(item.customerId);
+        const date = readBackupText(item.date);
+        const amountCents = item.amountCents;
+        const writeOffCents = item.writeOffCents;
+
+        if (!id || id.length > 100 || paymentIds.has(id)) {
+          throw new Error("第 " + row + " 笔收款记录的编号不正确");
+        }
+        if (!customerIds.has(customerId)) {
+          throw new Error("第 " + row + " 笔收款记录找不到对应客户");
+        }
+        if (!parseDateParts(date)) {
+          throw new Error("第 " + row + " 笔收款记录的日期不正确");
+        }
+        if (
+          !Number.isSafeInteger(amountCents) ||
+          amountCents < 0
+        ) {
+          throw new Error("第 " + row + " 笔收款记录的金额不正确");
+        }
+        if (
+          !Number.isSafeInteger(writeOffCents) ||
+          writeOffCents < 0
+        ) {
+          throw new Error("第 " + row + " 笔收款记录的抹零金额不正确");
+        }
+        if (amountCents + writeOffCents <= 0) {
+          throw new Error("第 " + row + " 笔收款记录没有金额");
+        }
+
+        paymentIds.add(id);
+        return {
+          id,
+          customerId,
+          date,
+          amountCents,
+          writeOffCents,
+          createdAt:
+            typeof item.createdAt === "string"
+              ? item.createdAt
+              : new Date().toISOString()
+        };
+      });
+
+      // 防止导入的收款总额超过原始欠款，避免账目越算越乱。
+      const originalDebtByCustomer = new Map();
+      const customerNameById = new Map();
+      for (const customer of customers) {
+        customerNameById.set(customer.id, customer.name);
+      }
+      for (const sale of sales) {
+        originalDebtByCustomer.set(
+          sale.customerId,
+          (originalDebtByCustomer.get(sale.customerId) || 0) +
+            (sale.amountCents - sale.paidCents)
+        );
+      }
+
+      const reductionByCustomer = new Map();
+      for (const payment of payments) {
+        reductionByCustomer.set(
+          payment.customerId,
+          (reductionByCustomer.get(payment.customerId) || 0) +
+            payment.amountCents +
+            payment.writeOffCents
+        );
+      }
+
+      for (const [customerId, reduction] of reductionByCustomer) {
+        const originalDebt = originalDebtByCustomer.get(customerId) || 0;
+        if (reduction > originalDebt) {
+          throw new Error(
+            "客户“" +
+              customerNameById.get(customerId) +
+              "”的收款记录超过了欠款总额"
+          );
+        }
+      }
+
+      return {
+        app: APP_NAME,
+        version: APP_VERSION,
+        customers,
+        sales,
+        payments
+      };
+    }
+
+    async function importBackupFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const imported = parseBackup(text);
+        const currentCount =
+          data.customers.length +
+          " 位客户、" +
+          data.sales.length +
+          " 笔赊账、" +
+          (data.payments || []).length +
+          " 笔收款";
+        const importedCount =
+          imported.customers.length +
+          " 位客户、" +
+          imported.sales.length +
+          " 笔赊账、" +
+          imported.payments.length +
+          " 笔收款";
+
+        const sure = window.confirm(
+          "导入会覆盖当前全部数据。\n\n当前：" +
+            currentCount +
+            "\n将导入：" +
+            importedCount +
+            "\n\n确定恢复吗？"
+        );
+        if (!sure) return;
+
+        if (!commitData(imported)) {
+          showToast(lastSaveError || "数据没有恢复成功", true);
+          return;
+        }
+        showHome();
+        showToast("数据已恢复");
+      } catch (error) {
+        console.error("导入失败：", error);
+        window.alert("恢复失败：" + error.message);
+      } finally {
+        importInput.value = "";
+      }
+    }
+
+    // ---------- 提示 ----------
+    function showToast(message, isError = false) {
+      clearTimeout(toastTimer);
+      clearTimeout(toastHideTimer);
+
+      toastEl.textContent = message;
+      toastEl.classList.toggle("error", isError);
+      toastEl.hidden = false;
+
+      requestAnimationFrame(() => {
+        toastEl.classList.add("visible");
+      });
+
+      toastTimer = setTimeout(() => {
+        toastEl.classList.remove("visible");
+        toastHideTimer = setTimeout(() => {
+          toastEl.hidden = true;
+        }, 200);
+      }, 2600);
+    }
+
+    // ---------- 事件绑定 ----------
+    const RIPPLE_SELECTOR =
+      ".primary-button, .pay-button, .secondary-button, .danger-button, .back-button, .dialog-close, .customer-card, .settled-card, .sale-card, .sort-toggle";
+
+    document.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || prefersReducedMotion()) return;
+
+      const target = event.target.closest(RIPPLE_SELECTOR);
+      if (!target || target.disabled) return;
+
+      const rect = target.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 1.7;
+      const ripple = document.createElement("span");
+
+      ripple.className = "tap-ripple";
+      ripple.style.width = size + "px";
+      ripple.style.height = size + "px";
+      ripple.style.left = event.clientX - rect.left + "px";
+      ripple.style.top = event.clientY - rect.top + "px";
+      target.appendChild(ripple);
+      ripple.addEventListener("animationend", () => ripple.remove(), {
+        once: true
+      });
+
+      const vibration = target.matches(".primary-button, .pay-button")
+        ? 8
+        : target.matches(".sort-toggle, .danger-button")
+          ? 5
+          : 0;
+
+      if (vibration && typeof navigator.vibrate === "function") {
+        try {
+          navigator.vibrate(vibration);
+        } catch (error) {
+          // 不支持轻震动的浏览器直接忽略。
+        }
+      }
+    });
+
+    mainEl.addEventListener("click", (event) => {
+      if (event.target.closest("#sortButton")) {
+        toggleSortMode();
+        return;
+      }
+
+      const saleCard = event.target.closest("[data-sale-id]");
+      if (saleCard) {
+        openRecordDialog(saleCard.dataset.saleId);
+        return;
+      }
+
+      const card = event.target.closest("[data-customer-id]");
+      if (card) {
+        openLedger(card.dataset.customerId);
+      }
+    });
+
+    mainEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+
+      const saleCard = event.target.closest("[data-sale-id]");
+      if (!saleCard) return;
+
+      event.preventDefault();
+      openRecordDialog(saleCard.dataset.saleId);
+    });
+
+    backButton.addEventListener("click", showHome);
+    addButton.addEventListener("click", openSaleDialog);
+    paymentButton.addEventListener("click", openPaymentDialog);
+    customerSelect.addEventListener("change", syncNewCustomerField);
+    saleForm.addEventListener("submit", (event) => {
+      try {
+        handleSaleSubmit(event);
+      } catch (error) {
+        console.error("登记时出错：", error);
+        showFormError("保存时出现异常，请刷新页面后确认是否已经记上。");
+        saveButton.disabled = false;
+      }
+    });
+
+    cancelButton.addEventListener("click", () => {
+      saleDialog.close();
+    });
+
+    saleDialog.addEventListener("click", (event) => {
+      if (event.target === saleDialog) {
+        saleDialog.close();
+      }
+    });
+
+    saleDialog.addEventListener("close", () => {
+      document.body.classList.remove("dialog-open");
+      formError.hidden = true;
+    });
+
+    paymentForm.addEventListener("submit", (event) => {
+      try {
+        handlePaymentSubmit(event);
+      } catch (error) {
+        console.error("收款时出错：", error);
+        showPaymentError("保存时出现异常，请刷新页面后确认是否已经记上。");
+        paymentSaveButton.disabled = false;
+      }
+    });
+
+    paymentAmount.addEventListener("input", updatePaymentPreview);
+    paymentWriteOff.addEventListener("input", updatePaymentPreview);
+
+    paymentCancelButton.addEventListener("click", () => {
+      paymentDialog.close();
+    });
+
+    paymentDialog.addEventListener("click", (event) => {
+      if (event.target === paymentDialog) {
+        paymentDialog.close();
+      }
+    });
+
+    paymentDialog.addEventListener("close", () => {
+      document.body.classList.remove("dialog-open");
+      paymentError.hidden = true;
+      currentPaymentCustomerId = null;
+      currentPaymentBalance = 0;
+    });
+
+    recordCloseButton.addEventListener("click", closeRecordDialog);
+
+    recordDialog.addEventListener("click", (event) => {
+      const actionButton = event.target.closest("[data-record-action]");
+      if (actionButton) {
+        const action = actionButton.dataset.recordAction;
+        if (action === "edit") startRecordEdit();
+        else if (action === "delete") startRecordDelete();
+        else if (action === "cancel") cancelRecordMode();
+        else if (action === "backToEdit") backToRecordEdit();
+        else if (action === "saveEdit") saveRecordEditDraft();
+        else if (action === "confirmEdit") applyRecordEdit();
+        else if (action === "confirmDelete") confirmRecordDelete();
+        return;
+      }
+
+      if (event.target === recordDialog && recordMode === "view") {
+        closeRecordDialog();
+      }
+    });
+
+    recordDialog.addEventListener("cancel", (event) => {
+      if (recordMode !== "view") {
+        event.preventDefault();
+      }
+    });
+
+    recordDialog.addEventListener("close", () => {
+      document.body.classList.remove("dialog-open");
+      recordError.hidden = true;
+      recordMode = "view";
+      recordDraft = null;
+      recordSaleId = "";
+      recordCustomerId = "";
+      recordActionBusy = false;
+    });
+
+    exportButton.addEventListener("click", exportBackup);
+    importButton.addEventListener("click", () => importInput.click());
+    importInput.addEventListener("change", importBackupFile);
+
+    // 首次进入
+    if (!storageAvailable) {
+      showStorageNotice();
+    }
+    renderApp();
+    playViewEnter();
+  </script>
+</body>
+</html>

@@ -693,14 +693,30 @@
     }
 
     .payment-row {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 14px;
       padding: 12px 15px;
+      overflow: hidden;
       border: 1px solid var(--line);
       border-radius: 14px;
       background: var(--surface);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.2s ease,
+        transform 0.16s var(--ease-out);
+    }
+
+    .payment-row:active {
+      transform: scale(0.991);
     }
 
     .payment-date {
@@ -721,6 +737,13 @@
       flex-direction: column;
       align-items: flex-end;
       gap: 3px;
+    }
+
+    .payment-open-hint {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
     }
 
     .writeoff-pill {
@@ -1588,7 +1611,8 @@
         box-shadow: 0 10px 26px rgba(54, 45, 31, 0.1);
       }
 
-      .sale-card:hover {
+      .sale-card:hover,
+      .payment-row:hover {
         box-shadow: 0 8px 22px rgba(54, 45, 31, 0.09);
       }
 
@@ -1915,7 +1939,9 @@
     let pendingNewSaleId = "";
     let pendingNewPaymentId = "";
     let pendingNewCustomerId = "";
+    let recordKind = "sale";
     let recordSaleId = "";
+    let recordPaymentId = "";
     let recordCustomerId = "";
     let recordMode = "view";
     let recordDraft = null;
@@ -2278,14 +2304,21 @@
         );
     }
 
-    function getCustomerPaymentReduction(customerId) {
-      return (data.payments || [])
+    function getPaymentReductionForPayments(customerId, payments) {
+      return payments
         .filter((payment) => payment.customerId === customerId)
         .reduce(
           (sum, payment) =>
             sum + payment.amountCents + payment.writeOffCents,
           0
         );
+    }
+
+    function getCustomerPaymentReduction(customerId) {
+      return getPaymentReductionForPayments(
+        customerId,
+        data.payments || []
+      );
     }
 
     function getOriginalDebtForSales(customerId, sales) {
@@ -2302,6 +2335,13 @@
       return (
         getCustomerPaymentReduction(customerId) >
         getOriginalDebtForSales(customerId, sales)
+      );
+    }
+
+    function wouldOverpayWithPayments(customerId, payments) {
+      return (
+        getPaymentReductionForPayments(customerId, payments) >
+        getOriginalDebtForSales(customerId, data.sales)
       );
     }
 
@@ -2602,6 +2642,10 @@
           return (
             '<article class="payment-row' +
             (payment.id === pendingNewPaymentId ? " item-enter" : "") +
+            '" role="button" tabindex="0" aria-haspopup="dialog" aria-label="查看 ' +
+            formatDate(payment.date) +
+            ' 的收款详情" data-payment-id="' +
+            escapeHtml(payment.id) +
             '">' +
             '<span class="payment-date">' +
             formatDate(payment.date) +
@@ -2609,6 +2653,7 @@
             '<span class="payment-values">' +
             cash +
             writeOff +
+            '<span class="payment-open-hint">详情 ›</span>' +
             "</span>" +
             "</article>"
           );
@@ -3165,6 +3210,75 @@
       );
     }
 
+    function findPaymentRowElement(paymentId) {
+      return (
+        [...mainEl.querySelectorAll("[data-payment-id]")].find(
+          (row) => row.dataset.paymentId === paymentId
+        ) || null
+      );
+    }
+
+    function getPaymentRecordContext() {
+      const customer = data.customers.find(
+        (item) => item.id === recordCustomerId
+      );
+      if (!customer) return null;
+
+      const payment = (data.payments || []).find(
+        (item) =>
+          item.id === recordPaymentId &&
+          item.customerId === recordCustomerId
+      );
+      if (!payment) return null;
+
+      return {
+        customer,
+        payment,
+        stats: getCustomerStats(customer.id)
+      };
+    }
+
+    function openPaymentRecordDialog(paymentId) {
+      if (recordDialog.open) return;
+
+      const customer = data.customers.find(
+        (item) => item.id === currentCustomerId
+      );
+      const payment = (data.payments || []).find(
+        (item) =>
+          item.id === paymentId &&
+          item.customerId === currentCustomerId
+      );
+      if (!customer || !payment) {
+        showToast("没有找到这笔收款记录", true);
+        return;
+      }
+
+      recordKind = "payment";
+      recordSaleId = "";
+      recordPaymentId = paymentId;
+      recordCustomerId = customer.id;
+      recordMode = "view";
+      recordDraft = null;
+      recordActionBusy = false;
+      if (!renderRecordDialog()) return;
+      recordDialog.showModal();
+      document.body.classList.add("dialog-open");
+    }
+
+    function getPaymentAllocations(customerId, paymentId) {
+      const stats = getCustomerStats(customerId);
+      const allocations = [];
+      for (const sale of stats.sales) {
+        for (const event of sale.paymentEvents || []) {
+          if (event.paymentId === paymentId) {
+            allocations.push({ sale, event });
+          }
+        }
+      }
+      return allocations;
+    }
+
     function getSaleRepaymentEvents(sale) {
       const events = [];
       if (sale.paidCents > 0) {
@@ -3208,7 +3322,9 @@
         return;
       }
 
+      recordKind = "sale";
       recordSaleId = saleId;
+      recordPaymentId = "";
       recordCustomerId = customer.id;
       recordMode = "view";
       recordDraft = null;
@@ -3397,7 +3513,233 @@
       );
     }
 
+    function finishRecordPanel() {
+      recordBody.classList.remove("record-mode-enter");
+      if (!prefersReducedMotion()) {
+        void recordBody.offsetWidth;
+        recordBody.classList.add("record-mode-enter");
+      }
+      recordBody.scrollTop = 0;
+    }
+
+    function renderPaymentDetailHtml(customer, payment) {
+      const allocationList = getPaymentAllocations(
+        customer.id,
+        payment.id
+      );
+      const reduction = payment.amountCents + payment.writeOffCents;
+      const moneyParts = [];
+
+      if (payment.writeOffCents > 0) {
+        moneyParts.push("抹零 " + formatMoney(payment.writeOffCents));
+      }
+      moneyParts.push("实际抵扣 " + formatMoney(reduction));
+
+      const allocationHtml =
+        allocationList.length > 0
+          ? allocationList
+              .map(({ sale, event }) => {
+                const parts = [];
+                if (event.cashCents > 0) {
+                  parts.push("收款 " + formatMoney(event.cashCents));
+                }
+                if (event.writeOffCents > 0) {
+                  parts.push(
+                    '<span class="writeoff-pill">抹零 ' +
+                      formatMoney(event.writeOffCents) +
+                      "</span>"
+                  );
+                }
+                return (
+                  '<div class="repayment-row">' +
+                  '<span class="repayment-date">' +
+                  escapeHtml(sale.item) +
+                  " · " +
+                  formatDate(sale.date) +
+                  "</span>" +
+                  '<span class="repayment-amount">' +
+                  parts.join(" ") +
+                  "</span>" +
+                  "</div>"
+                );
+              })
+              .join("")
+          : '<div class="record-empty">还没有冲抵到具体赊账</div>';
+
+      return (
+        '<div class="record-hero">' +
+        '<div class="record-hero-top">' +
+        '<span class="record-item">收款</span>' +
+        '<span class="status open">已入账</span>' +
+        "</div>" +
+        '<div class="record-amount">' +
+        formatMoney(payment.amountCents) +
+        "</div>" +
+        '<div class="record-money-line">' +
+        moneyParts.join(" · ") +
+        "</div>" +
+        "</div>" +
+        '<div class="record-info">' +
+        '<div class="detail-row">' +
+        '<span class="detail-key">客户</span>' +
+        '<span class="detail-value">' +
+        escapeHtml(customer.name) +
+        "</span>" +
+        "</div>" +
+        '<div class="detail-row">' +
+        '<span class="detail-key">收款时间</span>' +
+        '<span class="detail-value">' +
+        formatDate(payment.date) +
+        "</span>" +
+        "</div>" +
+        "</div>" +
+        '<div class="record-repayments">' +
+        '<div class="record-section-title">冲抵记录</div>' +
+        '<div class="repayment-list">' +
+        allocationHtml +
+        "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderPaymentEditHtml() {
+      const draft = recordDraft;
+      return (
+        '<div class="record-edit">' +
+        '<label class="field">' +
+        "<span>收款日期</span>" +
+        '<input id="paymentRecordDate" type="date" max="' +
+        todayString() +
+        '" value="' +
+        escapeHtml(draft.date) +
+        '">' +
+        "</label>" +
+        '<div class="field-row">' +
+        '<label class="field">' +
+        "<span>收款（元）</span>" +
+        '<input id="paymentRecordAmount" type="number" inputmode="decimal" step="0.01" min="0" value="' +
+        formatCentsForInput(draft.amountCents) +
+        '">' +
+        "</label>" +
+        '<label class="field">' +
+        "<span>抹零（元）</span>" +
+        '<input id="paymentRecordWriteOff" type="number" inputmode="decimal" step="0.01" min="0" value="' +
+        formatCentsForInput(draft.writeOffCents) +
+        '">' +
+        "</label>" +
+        "</div>" +
+        '<p class="hint">修改后会按新的金额重新自动冲抵最早的欠款。</p>' +
+        "</div>"
+      );
+    }
+
+    function renderPaymentConfirmEditHtml() {
+      const draft = recordDraft;
+      return (
+        '<div class="record-confirm">' +
+        '<div class="confirm-mark">?</div>' +
+        "<h3>确认要修改吗？</h3>" +
+        '<p class="confirm-note">（记错账可不是小事噢）</p>' +
+        '<div class="confirm-summary">' +
+        '<div class="confirm-row"><span>收款日期</span><strong>' +
+        formatDate(draft.date) +
+        "</strong></div>" +
+        '<div class="confirm-row"><span>收款金额</span><strong>' +
+        formatMoney(draft.amountCents) +
+        "</strong></div>" +
+        '<div class="confirm-row"><span>抹零金额</span><strong>' +
+        formatMoney(draft.writeOffCents) +
+        "</strong></div>" +
+        "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderPaymentConfirmDeleteHtml(payment) {
+      return (
+        '<div class="record-confirm">' +
+        '<div class="confirm-mark">!</div>' +
+        "<h3>确认要删除该记录吗？</h3>" +
+        '<p class="confirm-note">（删了可就没了呦）</p>' +
+        '<div class="confirm-record">' +
+        "收款 " +
+        formatMoney(payment.amountCents) +
+        " · " +
+        formatDate(payment.date) +
+        (payment.writeOffCents > 0
+          ? "<br>抹零 " + formatMoney(payment.writeOffCents)
+          : "") +
+        "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderPaymentRecordDialog(context) {
+      const { customer, payment } = context;
+      recordError.hidden = true;
+      recordError.textContent = "";
+
+      if (recordMode === "edit") {
+        if (!recordDraft) {
+          recordDraft = {
+            date: payment.date,
+            amountCents: payment.amountCents,
+            writeOffCents: payment.writeOffCents
+          };
+        }
+        recordDialogTitle.textContent = "修改这笔收款";
+        recordDialogSubtitle.textContent =
+          customer.name + " · 保存前还会再确认一次";
+        recordBody.innerHTML = renderPaymentEditHtml();
+        recordActions.innerHTML =
+          '<button class="secondary-button" type="button" data-record-action="cancel">取消</button>' +
+          '<button class="primary-button" type="button" data-record-action="saveEdit">保存修改</button>';
+      } else if (recordMode === "confirmEdit") {
+        if (!recordDraft) {
+          recordMode = "edit";
+          renderPaymentRecordDialog(context);
+          return true;
+        }
+        recordDialogTitle.textContent = "确认修改";
+        recordDialogSubtitle.textContent =
+          customer.name + " · 最后确认一次";
+        recordBody.innerHTML = renderPaymentConfirmEditHtml();
+        recordActions.innerHTML =
+          '<button class="secondary-button" type="button" data-record-action="backToEdit">再想想</button>' +
+          '<button class="primary-button" type="button" data-record-action="confirmEdit">确认修改</button>';
+      } else if (recordMode === "confirmDelete") {
+        recordDialogTitle.textContent = "确认删除";
+        recordDialogSubtitle.textContent =
+          customer.name + " · 删除后无法恢复";
+        recordBody.innerHTML = renderPaymentConfirmDeleteHtml(payment);
+        recordActions.innerHTML =
+          '<button class="secondary-button" type="button" data-record-action="cancel">取消</button>' +
+          '<button class="danger-button solid" type="button" data-record-action="confirmDelete">确认删除</button>';
+      } else {
+        recordDialogTitle.textContent = "收款详情";
+        recordDialogSubtitle.textContent =
+          customer.name + " · 自动冲抵最早的欠款";
+        recordBody.innerHTML = renderPaymentDetailHtml(customer, payment);
+        recordActions.innerHTML =
+          '<button class="danger-button" type="button" data-record-action="delete">删除</button>' +
+          '<button class="primary-button" type="button" data-record-action="edit">修改</button>';
+      }
+
+      finishRecordPanel();
+      return true;
+    }
+
     function renderRecordDialog() {
+      if (recordKind === "payment") {
+        const paymentContext = getPaymentRecordContext();
+        if (!paymentContext) {
+          closeRecordDialog();
+          showToast("没有找到这笔收款记录", true);
+          return false;
+        }
+        return renderPaymentRecordDialog(paymentContext);
+      }
+
       const context = getRecordContext();
       if (!context) {
         closeRecordDialog();
@@ -3408,6 +3750,7 @@
       const { customer, sale } = context;
       const isOpen = sale.remaining > 0;
       recordError.hidden = true;
+      recordError.textContent = "";
 
       if (recordMode === "edit") {
         if (!recordDraft) {
@@ -3464,6 +3807,20 @@
     }
 
     function startRecordEdit() {
+      if (recordKind === "payment") {
+        const context = getPaymentRecordContext();
+        if (!context) return;
+
+        recordDraft = {
+          date: context.payment.date,
+          amountCents: context.payment.amountCents,
+          writeOffCents: context.payment.writeOffCents
+        };
+        recordMode = "edit";
+        renderRecordDialog();
+        return;
+      }
+
       const context = getRecordContext();
       if (!context) return;
 
@@ -3478,7 +3835,11 @@
     }
 
     function startRecordDelete() {
-      if (!getRecordContext()) return;
+      if (recordKind === "payment") {
+        if (!getPaymentRecordContext()) return;
+      } else if (!getRecordContext()) {
+        return;
+      }
       recordMode = "confirmDelete";
       renderRecordDialog();
     }
@@ -3492,6 +3853,161 @@
     function backToRecordEdit() {
       recordMode = "edit";
       renderRecordDialog();
+    }
+
+    function readPaymentEditDraft() {
+      const date = document.getElementById("paymentRecordDate").value;
+      const amountCents = yuanToCents(
+        document.getElementById("paymentRecordAmount").value
+      );
+      const writeOffCents = yuanToCents(
+        document.getElementById("paymentRecordWriteOff").value
+      );
+
+      if (!parseDateParts(date)) {
+        showRecordError("请选择正确的收款日期。", "paymentRecordDate");
+        return null;
+      }
+      if (date > todayString()) {
+        showRecordError("日期不能晚于今天。", "paymentRecordDate");
+        return null;
+      }
+      if (!Number.isFinite(amountCents) || amountCents < 0) {
+        showRecordError("请填写正确的收款金额。", "paymentRecordAmount");
+        return null;
+      }
+      if (!Number.isFinite(writeOffCents) || writeOffCents < 0) {
+        showRecordError("请填写正确的抹零金额。", "paymentRecordWriteOff");
+        return null;
+      }
+      if (amountCents + writeOffCents <= 0) {
+        showRecordError(
+          "请填写收款金额，或者填写抹零金额。",
+          "paymentRecordAmount"
+        );
+        return null;
+      }
+
+      const nextPayments = (data.payments || []).map((payment) =>
+        payment.id === recordPaymentId
+          ? {
+              ...payment,
+              date,
+              amountCents,
+              writeOffCents
+            }
+          : payment
+      );
+
+      if (wouldOverpayWithPayments(recordCustomerId, nextPayments)) {
+        showRecordError(
+          "修改后，这位客户的历史收款会超过总欠款，不能保存。可以先把收款金额或抹零改小一点。"
+        );
+        return null;
+      }
+
+      return {
+        date,
+        amountCents,
+        writeOffCents
+      };
+    }
+
+    function savePaymentEditDraft() {
+      const draft = readPaymentEditDraft();
+      if (!draft) return;
+
+      recordDraft = draft;
+      recordMode = "confirmEdit";
+      renderRecordDialog();
+    }
+
+    function applyPaymentEdit() {
+      if (recordActionBusy || !recordDraft) return;
+      const context = getPaymentRecordContext();
+      if (!context) return;
+
+      recordActionBusy = true;
+      const draft = recordDraft;
+      const nextPayments = (data.payments || []).map((payment) =>
+        payment.id === recordPaymentId
+          ? {
+              ...payment,
+              date: draft.date,
+              amountCents: draft.amountCents,
+              writeOffCents: draft.writeOffCents,
+              updatedAt: new Date().toISOString()
+            }
+          : payment
+      );
+
+      if (wouldOverpayWithPayments(recordCustomerId, nextPayments)) {
+        recordActionBusy = false;
+        showRecordError(
+          "修改后，这位客户的历史收款会超过总欠款，不能保存。"
+        );
+        return;
+      }
+
+      const editedPaymentId = recordPaymentId;
+      const nextData = {
+        ...data,
+        payments: nextPayments
+      };
+
+      if (!commitData(nextData)) {
+        recordActionBusy = false;
+        showRecordError(lastSaveError || "修改没有保存成功。");
+        return;
+      }
+
+      closeRecordDialog();
+      renderApp();
+
+      const row = findPaymentRowElement(editedPaymentId);
+      if (row && !prefersReducedMotion()) {
+        row.classList.add("item-updated");
+        setTimeout(() => row.classList.remove("item-updated"), 800);
+      }
+      showToast("收款记录已修改");
+    }
+
+    function performDeletePayment(paymentId, row) {
+      const nextPayments = (data.payments || []).filter(
+        (payment) => payment.id !== paymentId
+      );
+      const nextData = {
+        ...data,
+        payments: nextPayments
+      };
+
+      if (!commitData(nextData)) {
+        if (row) row.classList.remove("item-leaving");
+        showToast(lastSaveError || "删除失败，收款记录还在", true);
+        return;
+      }
+
+      renderApp();
+      showToast("收款记录已删除");
+    }
+
+    function confirmPaymentRecordDelete() {
+      if (recordActionBusy || !getPaymentRecordContext()) return;
+
+      const paymentId = recordPaymentId;
+      const row = findPaymentRowElement(paymentId);
+      recordActionBusy = true;
+      closeRecordDialog();
+
+      if (!row || prefersReducedMotion()) {
+        performDeletePayment(paymentId, row);
+        return;
+      }
+
+      row.classList.add("item-leaving");
+      setTimeout(() => {
+        performDeletePayment(paymentId, row);
+      }, 260);
     }
 
     function readRecordEditDraft() {
@@ -3558,6 +4074,11 @@
     }
 
     function saveRecordEditDraft() {
+      if (recordKind === "payment") {
+        savePaymentEditDraft();
+        return;
+      }
+
       const draft = readRecordEditDraft();
       if (!draft) return;
 
@@ -3567,6 +4088,11 @@
     }
 
     function applyRecordEdit() {
+      if (recordKind === "payment") {
+        applyPaymentEdit();
+        return;
+      }
+
       if (recordActionBusy || !recordDraft) return;
       recordActionBusy = true;
 
@@ -3657,6 +4183,11 @@
 
     function confirmRecordDelete() {
       if (recordActionBusy || !recordCustomerId) return;
+
+      if (recordKind === "payment") {
+        confirmPaymentRecordDelete();
+        return;
+      }
 
       const context = getRecordContext();
       if (!context) return;
@@ -3995,7 +4526,7 @@
 
     // ---------- 事件绑定 ----------
     const RIPPLE_SELECTOR =
-      ".primary-button, .pay-button, .secondary-button, .danger-button, .data-button, .back-button, .dialog-close, .customer-card, .settled-card, .sale-card, .sort-toggle";
+      ".primary-button, .pay-button, .secondary-button, .danger-button, .data-button, .back-button, .dialog-close, .customer-card, .settled-card, .sale-card, .payment-row, .sort-toggle";
 
     document.addEventListener("pointerdown", (event) => {
       if (event.button !== 0 || prefersReducedMotion()) return;
@@ -4044,6 +4575,12 @@
         return;
       }
 
+      const paymentRow = event.target.closest("[data-payment-id]");
+      if (paymentRow) {
+        openPaymentRecordDialog(paymentRow.dataset.paymentId);
+        return;
+      }
+
       const card = event.target.closest("[data-customer-id]");
       if (card) {
         openLedger(card.dataset.customerId);
@@ -4054,10 +4591,17 @@
       if (event.key !== "Enter" && event.key !== " ") return;
 
       const saleCard = event.target.closest("[data-sale-id]");
-      if (!saleCard) return;
+      if (saleCard) {
+        event.preventDefault();
+        openRecordDialog(saleCard.dataset.saleId);
+        return;
+      }
 
-      event.preventDefault();
-      openRecordDialog(saleCard.dataset.saleId);
+      const paymentRow = event.target.closest("[data-payment-id]");
+      if (paymentRow) {
+        event.preventDefault();
+        openPaymentRecordDialog(paymentRow.dataset.paymentId);
+      }
     });
 
     backButton.addEventListener("click", showHome);
@@ -4149,9 +4693,12 @@
     recordDialog.addEventListener("close", () => {
       document.body.classList.remove("dialog-open");
       recordError.hidden = true;
+      recordError.textContent = "";
+      recordKind = "sale";
       recordMode = "view";
       recordDraft = null;
       recordSaleId = "";
+      recordPaymentId = "";
       recordCustomerId = "";
       recordActionBusy = false;
     });
